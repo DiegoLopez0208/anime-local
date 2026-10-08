@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 const args=process.argv.slice(2);
 const cli=args[0]==='--cli';
-const file=fileURLToPath(new URL(cli?'../cli.mjs':'../server.mjs',import.meta.url));
+const file=fileURLToPath(new URL(cli?'../cli.mjs':'../local-server.mjs',import.meta.url));
 const child=spawn(process.execPath,[file,...(cli?args.slice(1):[])],{stdio:'inherit'});
 child.on('error',error=>{console.error(error.message);process.exitCode=1;});
 child.on('exit',code=>process.exit(code||0));

@@ -28,6 +28,6 @@ test('importación y exportación sin credenciales, validación de rutas',()=>{
 });
 test('script del catálogo válido',()=>{
  const html=readFileSync(new URL('./catalog.html',import.meta.url),'utf8');
- const text=html.split('<script type="module">')[1].split('</script>')[0].replace(/^import .*$/m,'');
+ const text=html.split('<script type="module">')[1].split('</script>')[0].replace(/^import .*$/gm,'');
  assert.doesNotThrow(()=>new Script(text));
 });

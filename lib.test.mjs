@@ -9,6 +9,7 @@ test('extrae los proveedores compatibles sin ejecutar JavaScript', () => {
 });
 test('convierte MEGA embed conservando la clave', () => {
   assert.equal(normalizeMega('https://mega.nz/embed/!abc!key'), 'https://mega.nz/file/abc#key');
+  assert.equal(normalizeMega('https://mega.nz/embed/abc#key'), 'https://mega.nz/file/abc#key');
   assert.throws(() => normalizeMega('https://example.com/embed/!abc!key'));
 });
 test('rangos completos, abiertos y de sufijo; rechaza rangos invalidos', () => {

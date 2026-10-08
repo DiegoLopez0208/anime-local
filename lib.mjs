@@ -21,6 +21,7 @@ export function normalizeMega(url) {
   const parsed = new URL(url);
   if (parsed.protocol !== 'https:' || parsed.hostname !== 'mega.nz') throw new Error('Enlace MEGA no valido.');
   const legacy = parsed.pathname.match(/^\/embed\/!([^!]+)!([^/]+)$/);
+  if (/^\/embed\/[\w-]+$/.test(parsed.pathname) && /^#[\w-]+$/.test(parsed.hash)) return 'https://mega.nz/file/' + parsed.pathname.split('/')[2] + parsed.hash;
   return legacy ? 'https://mega.nz/file/' + legacy[1] + '#' + legacy[2] : parsed.href;
 }
 

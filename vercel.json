@@ -3,7 +3,7 @@
   "functions": {
     "api/index.mjs": {
       "maxDuration": 60,
-      "includeFiles": "{catalog.html,web.html,profiles.mjs}"
+      "includeFiles": "{catalog.html,web.html,profiles.mjs,manga-ui.mjs}"
     }
   },
   "rewrites": [
@@ -20,6 +20,10 @@
       "destination": "/api/index?route=profiles"
     },
     {
+      "source": "/manga-ui.mjs",
+      "destination": "/api/index?route=manga-ui"
+    },
+    {
       "source": "/image/:path*",
       "destination": "/api/index?route=image&path=:path*"
     },
@@ -31,5 +35,6 @@
       "source": "/api/:action*",
       "destination": "/api/index?route=api&action=:action*"
     }
-  ]
+  ],
+  "framework": null
 }

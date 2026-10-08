@@ -1,3 +1,5 @@
+import * as manga from '../manga.mjs';
+import { inspect } from '../sources.mjs';
 import { readFile } from 'node:fs/promises';
 import { Buffer } from 'node:buffer';
 import * as catalog from '../catalog.mjs';
@@ -54,12 +56,12 @@ export default async function handler(req,res) {
   const query=new URL(req.url,'https://localhost').searchParams;
   const route=req.query?.route||query.get('route')||'home';
   const action=req.query?.action||query.get('action')||'';
-  if(['home','manual','profiles'].includes(route)){
-   const filename=route==='profiles'?'profiles.mjs':route==='manual'?'web.html':'catalog.html';
+  if(['home','manual','profiles','manga-ui'].includes(route)){
+   const filename=route==='manga-ui'?'manga-ui.mjs':route==='profiles'?'profiles.mjs':route==='manual'?'web.html':'catalog.html';
    const html=(await readFile(new URL('../'+filename,import.meta.url),'utf8')).replaceAll('__API_TOKEN__','cloud');
-   res.setHeader('Content-Type',route==='profiles'?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
+   res.setHeader('Content-Type',['profiles','manga-ui'].includes(route)?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
    res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','DENY');
-   if(route!=='profiles')res.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; media-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
+   if(!['profiles','manga-ui'].includes(route))res.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; media-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
    res.end(html);return;
   }
   if(route==='image'){
@@ -85,7 +87,10 @@ export default async function handler(req,res) {
   if(action==='catalog/directory'){send(res,200,await catalog.directory(input));return;}
   if(action==='catalog/anime'){send(res,200,await catalog.anime(input.path));return;}
   if(action==='catalog/episode'){send(res,200,await catalog.episode(input.path));return;}
-  if(action==='episode'){send(res,200,{servers:(await catalog.episode(new URL(input.url).pathname)).servers});return;}
+  if(action==='episode'){send(res,200,await inspect(input.url));return;}
+  if(action==='manga/search'){send(res,200,await manga.search(input));return;}
+  if(action==='manga/detail'){send(res,200,await manga.detail(input));return;}
+  if(action==='manga/chapter'){send(res,200,await manga.chapter(input));return;}
   if(action==='play'){
    const source=validateSource(input.url);const id=Buffer.from(source).toString('base64url');
    const name=new URL(source).hostname==='mega.nz'?(await sourceFile(source)).name:'YourUpload';

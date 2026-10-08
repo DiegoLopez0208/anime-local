@@ -1,6 +1,6 @@
 {
   "name": "@diegolopez02081/anime-local",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local anime catalog, watch lists and direct YourUpload/MEGA playback.",
   "type": "module",
   "license": "MIT",
@@ -12,7 +12,7 @@
   },
   "scripts": {
     "start": "node bin/anime-local.mjs",
-    "web": "node server.mjs",
+    "web": "node local-server.mjs",
     "test": "node --test",
     "smoke": "node smoke.mjs",
     "prepublishOnly": "npm test"
@@ -24,13 +24,16 @@
     "catalog.mjs",
     "profiles.mjs",
     "player.mjs",
-    "server.mjs",
+    "local-server.mjs",
     "cli.mjs",
     "catalog.html",
     "web.html",
     "vercel.json",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "sources.mjs",
+    "manga.mjs",
+    "manga-ui.mjs"
   ],
   "repository": {
     "type": "git",

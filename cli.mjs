@@ -1,3 +1,4 @@
+import { inspect } from './sources.mjs';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import { getText, parseEpisode, resolveYourUpload, resolveMega, createMegaBridge, probeYourUpload } from './lib.mjs';
@@ -6,11 +7,8 @@ const args = process.argv.slice(2);
 const terminal = createInterface({ input: stdin, output: stdout });
 let bridge;
 try {
-  const url = args.find(a => a.startsWith('https://')) || (await terminal.question('URL del episodio de TioAnime: ')).trim();
-  const parsed = new URL(url);
-  if (parsed.protocol !== 'https:' || parsed.hostname !== 'tioanime.com' || !parsed.pathname.startsWith('/ver/'))
-    throw new Error('Usa una URL https://tioanime.com/ver/...');
-  const choices = parseEpisode(await getText(url));
+  const url = args.find(a => a.startsWith('https://')) || (await terminal.question('URL del episodio de TioAnime o JKAnime: ')).trim();
+  const choices = (await inspect(url)).servers;
   if (!choices.length) throw new Error('No hay servidores YourUpload o MEGA para este episodio.');
   if (args.includes('--list')) { console.log(JSON.stringify(choices, null, 2)); }
   else {

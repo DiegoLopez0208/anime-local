@@ -1,6 +1,8 @@
 # Anime Local
 
-A small local anime catalog with watch lists, browser profiles, and direct YourUpload/MEGA playback. The interface is in Spanish.
+[Open the hosted app](https://anime-local-nine.vercel.app).
+
+A small local anime and manga catalog with watch lists, browser profiles, and direct YourUpload/MEGA playback. The interface is in Spanish.
 
 ## Run
 
@@ -31,7 +33,10 @@ VLC must be installed in its standard Windows location, or set `VLC_PATH` to the
 - Local registration/login and guest mode.
 - JSON library export/import; exports contain no password hashes.
 - Optional visual crop of the top 6% of the video. This hides a burned-in corner watermark at the cost of removing part of the picture. It does not alter the source file or reconstruct hidden image pixels.
-- Manual player at `/reproductor`.
+- Manual source inspector/player at `/reproductor`, supporting TioAnime and JKAnime episode links. JKAnime currently rejects Vercel datacenter requests with HTTP 403; use the local app for that source. Its published MEGA links were validated locally.
+- MangaDex manga, manhwa and manhua search with Japanese/Korean/Chinese origin filters, Spanish/Latin American Spanish/English chapter filters, pagination and cover art.
+- Chapter reader with page controls and vertical mode; reading position and last chapter saved in the same local library. Only publicly available chapters classified as safe are included. External publisher chapters are labeled rather than embedded.
+- AnimeFLV was investigated but returned HTTP 522 during verification; no working adapter is claimed.
 
 ## Local profiles are not server authentication
 
@@ -45,7 +50,7 @@ See [OWASP's guidance on browser storage](https://cheatsheetseries.owasp.org/che
 
 ## How playback works
 
-The scraper requests only the pages you browse and extracts data without executing third-party JavaScript. Covers are proxied; catalog cache lifetimes are 2 minutes for the home page, 5 minutes for directory pages, 10 minutes for series, and 1 minute for episodes.
+The scraper requests only the pages you browse and extracts data without executing third-party JavaScript. TioAnime covers are proxied; MangaDex covers and chapter images load directly from its official image CDN. MangaDex metadata has a short bounded cache; catalog cache lifetimes are 2 minutes for the home page, 5 minutes for directory pages, 10 minutes for series, and 1 minute for episodes.
 
 YourUpload playback uses a fresh MP4 URL and the required Referer. MEGAJS decrypts the shared video while serving byte ranges. Provider availability and transfer quotas still apply. Unsupported providers are shown as unavailable; the app does not bypass DRM, accounts, or provider quotas. It does not remove advertisements burned into a media file.
 
@@ -70,7 +75,7 @@ npm test
 npm run web
 ```
 
-There are 13 automated tests covering parsing, provider links, byte ranges, errors, local profile isolation, invalid passwords, import validation, and frontend syntax. Tests use synthetic fixtures and do not download episodes.
+There are 17 automated tests covering parsing, provider links, byte ranges, errors, local profile isolation, invalid passwords, import validation, and frontend syntax. Tests use synthetic fixtures and do not download episodes.
 
 Optional live checks against an episode of your choice:
 
@@ -82,6 +87,6 @@ On PowerShell, set `$env:TIOANIME_EPISODE` before running `npm run smoke`.
 
 Windows source-checkout launchers: `abrir-web.cmd` and `abrir-vlc.cmd`. The web launcher reuses an existing server or starts one hidden. Development logs are not part of the package or repository.
 
-Source files: `catalog.mjs` (scraper), `catalog.html` (UI), `profiles.mjs` (browser profiles), `lib.mjs` (providers), `server.mjs` (local API), `api/index.mjs` (Vercel adapter).
+Source files: `catalog.mjs` (scraper), `catalog.html` (UI), `profiles.mjs` (browser profiles), `lib.mjs` (providers), `sources.mjs` (additional source inspector), `manga.mjs` (MangaDex adapter), `manga-ui.mjs` (reader UI), `local-server.mjs` (local API), `api/index.mjs` (Vercel adapter).
 
 MIT applies to this application's code. Third-party names and media remain their respective owners' property. No video files or cover images are distributed in the package.

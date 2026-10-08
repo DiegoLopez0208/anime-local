@@ -35,7 +35,7 @@ export class Profiles {
  logout() { this.session.removeItem('anime-local-session'); }
  setAnime(anime, status = 'watching', extra = {}) {
   if (!STATUSES[status]) throw Error('Estado no válido.');
-  if (!/^\/anime\/[a-zA-Z0-9_-]+$/.test(anime.path)) throw Error('Anime no válido.');
+  if (!/^\/(?:anime\/[a-zA-Z0-9_-]+|manga\/[a-f0-9-]{36})$/.test(anime.path)) throw Error('Anime no válido.');
   const library = this.current().library;
   const previous = library[anime.path];
   library[anime.path] = { path: anime.path, title: anime.title, image: anime.image, status, ...previous, ...extra, updated: Date.now() };
@@ -53,11 +53,11 @@ export class Profiles {
  importData(input) {
   if (input?.version !== 1 || !input.library || typeof input.library !== 'object' || !input.progress || typeof input.progress !== 'object') throw Error('Archivo de biblioteca no válido.');
   const library = {}, progress = {};
-  const validAnime = /^\/anime\/[a-zA-Z0-9_-]+$/, validEpisode = /^\/ver\/[a-zA-Z0-9_.-]+$/;
+  const validAnime = /^\/(?:anime\/[a-zA-Z0-9_-]+|manga\/[a-f0-9-]{36})$/, validEpisode = /^\/(?:ver\/[a-zA-Z0-9_.-]+|leer\/[a-f0-9-]{36})$/;
   const rows = Object.values(input.library); if (rows.length > 5000) throw Error('La biblioteca es demasiado grande.');
   for (const row of rows) {
    if (!row || !validAnime.test(row.path) || !STATUSES[row.status] || typeof row.title !== 'string') throw Error('Anime no válido en el archivo.');
-   library[row.path] = { path: row.path, title: row.title.slice(0, 300), image: /^\/image\/uploads\/portadas\/[\w-]+\.(jpg|jpeg|png|webp)$/i.test(row.image || '') ? row.image : null, status: row.status, updated: Date.now() };
+   library[row.path] = { path: row.path, title: row.title.slice(0, 300), image: /^(?:\/image\/uploads\/portadas\/[\w-]+\.(?:jpg|jpeg|png|webp)|https:\/\/uploads\.mangadex\.org\/covers\/[a-f0-9-]{36}\/[\w.-]+)$/i.test(row.image || '') ? row.image : null, status: row.status, updated: Date.now() };
    if (validEpisode.test(row.lastEpisode || '')) library[row.path].lastEpisode = row.lastEpisode;
   }
   for (const [path, value] of Object.entries(input.progress).slice(0, 100)) {

@@ -1,3 +1,5 @@
+import * as manga from './manga.mjs';
+import { inspect } from './sources.mjs';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
@@ -31,14 +33,14 @@ const server = createServer(async (req, res) => {
   try {
     if (req.headers.host !== '127.0.0.1:' + port) { res.writeHead(403).end(); return; }
     const path = new URL(req.url, origin).pathname;
-    if (req.method === 'GET' && path === '/profiles.mjs') {
-      res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }).end(await readFile(new URL('./profiles.mjs', import.meta.url), 'utf8')); return;
+    if (req.method === 'GET' && ['/profiles.mjs','/manga-ui.mjs'].includes(path)) {
+      res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }).end(await readFile(new URL('.'+path, import.meta.url), 'utf8')); return;
     }
     if (req.method === 'GET' && path === '/favicon.ico') { res.writeHead(204).end(); return; }
     if (req.method === 'GET' && ['/','/reproductor'].includes(path)) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store',
         'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer',
-        'Content-Security-Policy': "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; media-src 'self' http://127.0.0.1:*; base-uri 'none'; frame-ancestors 'none'; form-action 'none'" }).end(path === '/reproductor' ? html : catalogHtml); return;
+        'Content-Security-Policy': "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; media-src 'self' http://127.0.0.1:*; base-uri 'none'; frame-ancestors 'none'; form-action 'none'" }).end(path === '/reproductor' ? html : catalogHtml); return;
     }
     if (req.method === 'GET' && path.startsWith('/image/')) {
       const image = path.slice('/image'.length);
@@ -78,12 +80,10 @@ const server = createServer(async (req, res) => {
     if (path === '/api/catalog/directory') { json(res, 200, await catalog.directory(input)); return; }
     if (path === '/api/catalog/anime') { json(res, 200, await catalog.anime(input.path)); return; }
     if (path === '/api/catalog/episode') { json(res, 200, await catalog.episode(input.path)); return; }
-    if (path === '/api/episode') {
-      const url = new URL(input.url);
-      if (url.protocol !== 'https:' || url.hostname !== 'tioanime.com' || !url.pathname.startsWith('/ver/'))
-        throw new Error('Pega una URL de episodio: https://tioanime.com/ver/...');
-      json(res, 200, { servers: parseEpisode(await getText(url.href)) }); return;
-    }
+    if (path === '/api/episode') { json(res, 200, await inspect(input.url)); return; }
+    if (path === '/api/manga/search') { json(res, 200, await manga.search(input)); return; }
+    if (path === '/api/manga/detail') { json(res, 200, await manga.detail(input)); return; }
+    if (path === '/api/manga/chapter') { json(res, 200, await manga.chapter(input)); return; }
     if (path === '/api/play') {
       const url = new URL(input.url);
       let session;

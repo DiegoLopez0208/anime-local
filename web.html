@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Anime local · Reproductor</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2040%2040%22%3E%3Crect%20width%3D%2240%22%20height%3D%2240%22%20rx%3D%2210%22%20fill%3D%22%23c5aaff%22%2F%3E%3Ctext%20x%3D%2220%22%20y%3D%2229%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2228%22%20fill%3D%22%23181020%22%3Ea%3C%2Ftext%3E%3C%2Fsvg%3E"><title>Anime local · Reproductor</title>
 <style>
 :root{color-scheme:dark;font-family:system-ui,sans-serif;background:#101219;color:#f3f4fa}
 *{box-sizing:border-box}body{margin:0}main{max-width:1060px;margin:0 auto;padding:48px 24px}
@@ -17,9 +17,9 @@ small{color:#adb5ca}footer{margin-top:36px;border-top:1px solid #303649;padding-
 [hidden]{display:none!important}@media(max-width:600px){main{padding:30px 16px}.row{flex-direction:column}#actions{align-items:flex-start;flex-direction:column}}
 </style>
 <main>
-<div class="brand">Anime local / Reproductor</div>
+<div class="brand"><a href="/">Anime local</a> / Reproductor ? TioAnime + JKAnime</div>
 <h1>Del episodio al video.</h1>
-<p>Pega el enlace de TioAnime y elige YourUpload o MEGA.<br>Reproduce aquí o abre el video en VLC.</p>
+<p>Pega un episodio de TioAnime o JKAnime y elige YourUpload o MEGA.<br>Reproduce aquí o abre el video en VLC.</p>
 <form id="form"><label for="episode">Enlace del episodio</label><div class="row"><input id="episode" type="url" required placeholder="https://tioanime.com/ver/..." autocomplete="off"><button id="search">Buscar servidores</button></div></form>
 <div id="servers" aria-label="Servidores disponibles"></div>
 <div id="status" role="status" aria-live="polite">Listo para buscar.</div>
@@ -29,13 +29,13 @@ small{color:#adb5ca}footer{margin-top:36px;border-top:1px solid #303649;padding-
 </main>
 <script>
 const token='__API_TOKEN__';
-const $=id=>document.getElementById(id);
+const $=id=>document.getElementById(id);if(token==='cloud')$('vlc').hidden=true;
 let session=null,busy=false;
 function status(text,error=false){$('status').textContent=text;$('status').className=error?'error':'';}
 function lock(value){busy=value;document.querySelectorAll('button').forEach(button=>button.disabled=value);}
 async function api(path,data){const response=await fetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json','X-Local-Token':token},body:JSON.stringify(data)});const result=await response.json();if(!response.ok)throw Error(result.error||'No se pudo completar la solicitud.');return result;}
 async function release(){if(!session)return;const previous=session;session=null;$('video').pause();$('video').removeAttribute('src');$('video').load();$('player').hidden=true;await api('close',{id:previous.id});}
-$('form').addEventListener('submit',async event=>{event.preventDefault();if(busy)return;lock(true);status('Buscando servidores…');$('servers').replaceChildren();try{await release();const result=await api('episode',{url:$('episode').value.trim()});for(const server of result.servers){const button=document.createElement('button');button.textContent=server.name;button.className='secondary';button.disabled=true;button.onclick=()=>play(server);$('servers').append(button);}status(result.servers.length?'Elige un servidor.':'Este episodio no ofrece YourUpload ni MEGA.');}catch(error){status(error.message,true);}finally{lock(false);}});
+$('form').addEventListener('submit',async event=>{event.preventDefault();if(busy)return;lock(true);status('Buscando servidores…');$('servers').replaceChildren();document.querySelectorAll('.found').forEach(x=>x.remove());try{await release();const result=await api('episode',{url:$('episode').value.trim()});for(const server of result.servers){const button=document.createElement('button');button.textContent=server.name;button.className='secondary';button.disabled=true;button.onclick=()=>play(server);$('servers').append(button);}status(result.servers.length?'Elige un servidor.':'Este episodio no ofrece YourUpload ni MEGA.');if(result.available?.length){const info=document.createElement('p');info.textContent='Fuente: '+result.source+' ? Servidores encontrados: '+result.available.map(x=>x.name+(x.compatible?' (compatible)':'')).join(', ');$('servers').after(info);info.className='found';}}catch(error){status(error.message,true);}finally{lock(false);}});
 async function play(server){if(busy)return;lock(true);status('Preparando '+server.name+'…');try{await release();session=await api('play',{url:server.url});$('name').textContent=session.name;$('player').hidden=false;$('video').src=session.src;status('Video preparado. Pulsa Play.');$('video').play().catch(()=>status('Video preparado. Pulsa Play.'));}catch(error){status(error.message,true);}finally{lock(false);}}
 $('vlc').onclick=async()=>{if(!session||busy)return;lock(true);try{await api('vlc',{id:session.id});$('video').pause();status('Abierto en VLC. Mantén esta aplicación activa si usas MEGA.');}catch(error){status(error.message,true);}finally{lock(false);}};
 $('video').addEventListener('error',()=>{if(session)status('El navegador no pudo reproducir el video. Prueba VLC; si tampoco funciona, el proveedor puede estar bloqueado o sin cuota.',true);});

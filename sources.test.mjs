@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseJk, sourceUrl } from './sources.mjs';
-import { uuid, mangaItem, pageUrls } from './manga.mjs';
+import { uuid, mangaItem, pageUrls, coverSource } from './manga.mjs';
 import { Profiles } from './profiles.mjs';
 const id='7e544761-7d3d-4fce-8137-719814d7d138';
 test('JKAnime: decode published URLs without running scripts and keep supported providers',()=>{
@@ -16,7 +16,7 @@ test('source input accepts episode pages only',()=>{
 });
 test('MangaDex metadata, UUID and page URL validation',()=>{
  const item=mangaItem({id,attributes:{title:{en:'Title'},originalLanguage:'ko',description:{es:'Texto'},tags:[]},relationships:[{type:'cover_art',attributes:{fileName:'cover.jpg'}}]});
- assert.equal(item.type,'Manhwa');assert.equal(item.synopsis,'Texto');assert.ok(item.image.startsWith('https://uploads.mangadex.org/covers/'));
+ assert.equal(item.type,'Manhwa');assert.equal(item.synopsis,'Texto');assert.ok(item.image.startsWith('/manga-cover/'));
  assert.equal(uuid(id.toUpperCase()),id);assert.throws(()=>uuid('../bad'));
  const result={baseUrl:'https://node.mangadex.network',chapter:{hash:'a'.repeat(32),dataSaver:['1-test.jpg']}};
  assert.equal(pageUrls(result)[0],'https://node.mangadex.network/data-saver/'+'a'.repeat(32)+'/1-test.jpg');
@@ -30,4 +30,9 @@ test('manga library and page progress survive export/import without profile cred
  profile.saveProgress('/leer/'+id,3);
  const other=new Profiles(storage(),storage());other.importData(profile.exportData());
  assert.equal(other.current().library['/manga/'+id].lastEpisode,'/leer/'+id);assert.equal(other.current().progress['/leer/'+id].time,3);
+});
+
+test('cover proxy validates IDs and filenames without accepting arbitrary destinations',()=>{
+ assert.equal(coverSource(id,id+'.jpg.256.jpg'),'https://uploads.mangadex.org/covers/'+id+'/'+id+'.jpg.256.jpg');
+ for(const file of ['../secret.jpg.256.jpg','https://evil.com/a.jpg','bad.svg.256.jpg'])assert.throws(()=>coverSource(id,file));
 });

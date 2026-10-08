@@ -57,7 +57,7 @@ export class Profiles {
   const rows = Object.values(input.library); if (rows.length > 5000) throw Error('La biblioteca es demasiado grande.');
   for (const row of rows) {
    if (!row || !validAnime.test(row.path) || !STATUSES[row.status] || typeof row.title !== 'string') throw Error('Anime no válido en el archivo.');
-   library[row.path] = { path: row.path, title: row.title.slice(0, 300), image: /^(?:\/image\/uploads\/portadas\/[\w-]+\.(?:jpg|jpeg|png|webp)|https:\/\/uploads\.mangadex\.org\/covers\/[a-f0-9-]{36}\/[\w.-]+)$/i.test(row.image || '') ? row.image : null, status: row.status, updated: Date.now() };
+   library[row.path] = { path: row.path, title: row.title.slice(0, 300), image: /^(?:\/image\/uploads\/portadas\/[\w-]+\.(?:jpg|jpeg|png|webp)|(?:https:\/\/uploads\.mangadex\.org\/covers\/|\/manga-cover\/)[a-f0-9-]{36}\/[\w.-]+)$/i.test(row.image || '') ? row.image : null, status: row.status, updated: Date.now() };
    if (validEpisode.test(row.lastEpisode || '')) library[row.path].lastEpisode = row.lastEpisode;
   }
   for (const [path, value] of Object.entries(input.progress).slice(0, 100)) {

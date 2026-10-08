@@ -50,6 +50,8 @@ const server = createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': response.headers.get('content-type'), 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
       await pipeline(Readable.fromWeb(response.body), res); return;
     }
+    const coverMatch=/^\/manga-cover\/([a-f0-9-]{36})\/([^/]+)$/.exec(path);
+    if(coverMatch&&req.method==='GET'){const image=await manga.coverImage(coverMatch[1],coverMatch[2]);res.writeHead(200,{'Content-Type':image.type,'Content-Length':image.data.length,'Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff'}).end(image.data);return;}
     const mangaMatch=/^\/manga-page\/([a-f0-9-]{36})\/(\d+)$/.exec(path);
     if(mangaMatch&&req.method==='GET'){const image=await manga.pageImage(mangaMatch[1],mangaMatch[2]);res.writeHead(200,{'Content-Type':image.type,'Content-Length':image.data.length,'Cache-Control':'private, max-age=300','X-Content-Type-Options':'nosniff'}).end(image.data);return;}
     const streamMatch = /^\/video\/([a-f0-9]{48})$/.exec(path);

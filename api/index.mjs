@@ -72,6 +72,11 @@ export default async function handler(req,res) {
    const bytes=Buffer.from(await response.arrayBuffer());if(bytes.length>MAX)throw Error('Imagen demasiado grande.');
    res.writeHead(200,{'Content-Type':response.headers.get('content-type'),'Cache-Control':'public, max-age=86400','X-Content-Type-Options':'nosniff'}).end(bytes);return;
   }
+  if(route==='manga-cover'){
+   if(req.method!=='GET'){res.writeHead(405).end();return;}
+   const image=await manga.coverImage(req.query?.id||query.get('id'),req.query?.file||query.get('file'));
+   res.writeHead(200,{'Content-Type':image.type,'Content-Length':image.data.length,'Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff'}).end(image.data);return;
+  }
   if(route==='manga-image'){
    if(req.method!=='GET'){res.writeHead(405).end();return;}
    const image=await manga.pageImage(req.query?.id||query.get('id'),req.query?.page||query.get('page'));

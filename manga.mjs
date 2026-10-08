@@ -25,8 +25,22 @@ export function mangaItem(row) {
  const id=uuid(row.id);
  return {id,path:'/manga/'+id,title:text(a.title),synopsis:text(a.description),status:a.status,
  type:({ja:'Manga',ko:'Manhwa',zh:'Manhua'})[a.originalLanguage]||'Cómic',
- image:cover&&/^[\w.-]+$/.test(cover)?'https://uploads.mangadex.org/covers/'+id+'/'+cover+'.256.jpg':null,
+ image:cover&&/^[\w.-]+$/.test(cover)?'/manga-cover/'+id+'/'+cover+'.256.jpg':null,
  tags:(a.tags||[]).map(tag=>text(tag.attributes?.name)),languages:a.availableTranslatedLanguages||[]};
+}
+export function coverSource(id, filename) {
+ id=uuid(id);
+ if(typeof filename!=='string'||!/^[a-f0-9-]{36}\.(jpg|jpeg|png|webp)\.256\.jpg$/i.test(filename))throw Error('Portada no válida.');
+ return 'https://uploads.mangadex.org/covers/'+id+'/'+filename;
+}
+export async function coverImage(id, filename) {
+ const response=await fetch(coverSource(id,filename),{signal:AbortSignal.timeout(20000)});
+ if(!response.ok)throw Error('La portada no está disponible.');
+ const type=response.headers.get('content-type');
+ if(!['image/jpeg','image/png','image/webp'].includes(type))throw Error('El proveedor no entregó una portada.');
+ const chunks=[];let size=0;
+ for await(const chunk of response.body){size+=chunk.length;if(size>4*1024*1024)throw Error('Portada demasiado grande.');chunks.push(Buffer.from(chunk));}
+ return {type,data:Buffer.concat(chunks,size)};
 }
 export async function search(input={}) {
  const params=new URLSearchParams({limit:'24',offset:String(offsetValue(input.offset)),'includes[]':'cover_art','contentRating[]':'safe',hasAvailableChapters:'true','availableTranslatedLanguage[]':language(input.language)});

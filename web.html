@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Anime local · Reproductor</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#101219;color:#f3f4fa}
+*{box-sizing:border-box}body{margin:0}main{max-width:1060px;margin:0 auto;padding:48px 24px}
+.brand{color:#a9b1ca;font-size:13px;letter-spacing:2px;text-transform:uppercase}h1{font-size:clamp(28px,5vw,44px);letter-spacing:-1.5px;margin:14px 0}
+p{color:#adb5ca;line-height:1.6}form{margin-top:30px;background:#1b1f2a;padding:22px;border:1px solid #303649;border-radius:16px}
+label{display:block;font-weight:600;margin-bottom:10px}.row{display:flex;gap:12px}input{flex:1;min-width:0;padding:14px;border-radius:8px;border:1px solid #46516b;background:#101219;color:#fff;font-size:16px}
+button{padding:13px 20px;border:0;border-radius:8px;background:#bdd4ff;color:#101219;font-size:15px;font-weight:650;cursor:pointer}
+button.secondary{background:#282f40;color:#e4eaff;border:1px solid #46516b}button:disabled{opacity:.5;cursor:wait}
+button:focus-visible,input:focus-visible{outline:3px solid #7faeff;outline-offset:3px}
+#servers{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0}#status{min-height:26px;color:#c6d8ff}
+#status.error{color:#ffaaa8}video{display:block;width:100%;aspect-ratio:16/9;background:#050607;border-radius:12px}
+#player{margin-top:24px}#actions{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:16px}
+small{color:#adb5ca}footer{margin-top:36px;border-top:1px solid #303649;padding-top:20px;color:#8993ae;font-size:13px}
+[hidden]{display:none!important}@media(max-width:600px){main{padding:30px 16px}.row{flex-direction:column}#actions{align-items:flex-start;flex-direction:column}}
+</style>
+<main>
+<div class="brand">Anime local / Reproductor</div>
+<h1>Del episodio al video.</h1>
+<p>Pega el enlace de TioAnime y elige YourUpload o MEGA.<br>Reproduce aquí o abre el video en VLC.</p>
+<form id="form"><label for="episode">Enlace del episodio</label><div class="row"><input id="episode" type="url" required placeholder="https://tioanime.com/ver/..." autocomplete="off"><button id="search">Buscar servidores</button></div></form>
+<div id="servers" aria-label="Servidores disponibles"></div>
+<div id="status" role="status" aria-live="polite">Listo para buscar.</div>
+<section id="player" hidden><video id="video" controls playsinline preload="metadata"></video>
+<div id="actions"><small id="name"></small><button id="vlc" class="secondary">Abrir en VLC</button></div></section>
+<footer>Funciona en tu equipo. MEGA conserva sus límites de transferencia. Mantén esta aplicación abierta durante la reproducción.</footer>
+</main>
+<script>
+const token='__API_TOKEN__';
+const $=id=>document.getElementById(id);
+let session=null,busy=false;
+function status(text,error=false){$('status').textContent=text;$('status').className=error?'error':'';}
+function lock(value){busy=value;document.querySelectorAll('button').forEach(button=>button.disabled=value);}
+async function api(path,data){const response=await fetch('/api/'+path,{method:'POST',headers:{'Content-Type':'application/json','X-Local-Token':token},body:JSON.stringify(data)});const result=await response.json();if(!response.ok)throw Error(result.error||'No se pudo completar la solicitud.');return result;}
+async function release(){if(!session)return;const previous=session;session=null;$('video').pause();$('video').removeAttribute('src');$('video').load();$('player').hidden=true;await api('close',{id:previous.id});}
+$('form').addEventListener('submit',async event=>{event.preventDefault();if(busy)return;lock(true);status('Buscando servidores…');$('servers').replaceChildren();try{await release();const result=await api('episode',{url:$('episode').value.trim()});for(const server of result.servers){const button=document.createElement('button');button.textContent=server.name;button.className='secondary';button.disabled=true;button.onclick=()=>play(server);$('servers').append(button);}status(result.servers.length?'Elige un servidor.':'Este episodio no ofrece YourUpload ni MEGA.');}catch(error){status(error.message,true);}finally{lock(false);}});
+async function play(server){if(busy)return;lock(true);status('Preparando '+server.name+'…');try{await release();session=await api('play',{url:server.url});$('name').textContent=session.name;$('player').hidden=false;$('video').src=session.src;status('Video preparado. Pulsa Play.');$('video').play().catch(()=>status('Video preparado. Pulsa Play.'));}catch(error){status(error.message,true);}finally{lock(false);}}
+$('vlc').onclick=async()=>{if(!session||busy)return;lock(true);try{await api('vlc',{id:session.id});$('video').pause();status('Abierto en VLC. Mantén esta aplicación activa si usas MEGA.');}catch(error){status(error.message,true);}finally{lock(false);}};
+$('video').addEventListener('error',()=>{if(session)status('El navegador no pudo reproducir el video. Prueba VLC; si tampoco funciona, el proveedor puede estar bloqueado o sin cuota.',true);});
+$('video').addEventListener('playing',()=>status('Reproduciendo.'));
+</script></html>

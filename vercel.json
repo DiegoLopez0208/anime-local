@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "functions": {
+    "api/index.mjs": {
+      "maxDuration": 60,
+      "includeFiles": "{catalog.html,web.html,profiles.mjs}"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/api/index?route=home"
+    },
+    {
+      "source": "/reproductor",
+      "destination": "/api/index?route=manual"
+    },
+    {
+      "source": "/profiles.mjs",
+      "destination": "/api/index?route=profiles"
+    },
+    {
+      "source": "/image/:path*",
+      "destination": "/api/index?route=image&path=:path*"
+    },
+    {
+      "source": "/video/:id",
+      "destination": "/api/index?route=video&id=:id"
+    },
+    {
+      "source": "/api/:action*",
+      "destination": "/api/index?route=api&action=:action*"
+    }
+  ]
+}

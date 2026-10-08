@@ -1,0 +1,8 @@
+node_modules/
+.vercel/
+.env*
+*.log
+*.png
+*.tgz
+sample-*.html
+.playwright-mcp/

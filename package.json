@@ -1,0 +1,54 @@
+{
+  "name": "@diegolopez02081/anime-local",
+  "version": "0.1.0",
+  "description": "Local anime catalog, watch lists and direct YourUpload/MEGA playback.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "anime-local": "bin/anime-local.mjs"
+  },
+  "scripts": {
+    "start": "node bin/anime-local.mjs",
+    "web": "node server.mjs",
+    "test": "node --test",
+    "smoke": "node smoke.mjs",
+    "prepublishOnly": "npm test"
+  },
+  "files": [
+    "bin/",
+    "api/",
+    "lib.mjs",
+    "catalog.mjs",
+    "profiles.mjs",
+    "player.mjs",
+    "server.mjs",
+    "cli.mjs",
+    "catalog.html",
+    "web.html",
+    "vercel.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DiegoLopez0208/anime-local.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DiegoLopez0208/anime-local/issues"
+  },
+  "homepage": "https://github.com/DiegoLopez0208/anime-local#readme",
+  "keywords": [
+    "anime",
+    "catalog",
+    "vlc",
+    "mega",
+    "watchlist"
+  ],
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "megajs": "^1.3.10"
+  }
+}

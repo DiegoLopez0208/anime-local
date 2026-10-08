@@ -1,3 +1,4 @@
+import * as ratings from './ratings.mjs';
 import * as manga from './manga.mjs';
 import { inspect } from './sources.mjs';
 import { createServer } from 'node:http';
@@ -5,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import { getText, parseEpisode, resolveYourUpload, resolveMega, createMegaBridge } from './lib.mjs';
+import { getText, parseEpisode, resolveYourUpload, resolveMega, createMegaBridge, parseRange } from './lib.mjs';
 import { openVlc } from './player.mjs';
 import * as catalog from './catalog.mjs';
 
@@ -33,7 +34,7 @@ const server = createServer(async (req, res) => {
   try {
     if (req.headers.host !== '127.0.0.1:' + port) { res.writeHead(403).end(); return; }
     const path = new URL(req.url, origin).pathname;
-    if (req.method === 'GET' && ['/profiles.mjs','/manga-ui.mjs'].includes(path)) {
+    if (req.method === 'GET' && ['/profiles.mjs','/manga-ui.mjs','/ratings-ui.mjs','/previews.mjs'].includes(path)) {
       res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }).end(await readFile(new URL('.'+path, import.meta.url), 'utf8')); return;
     }
     if (req.method === 'GET' && path === '/favicon.ico') { res.writeHead(204).end(); return; }
@@ -54,17 +55,23 @@ const server = createServer(async (req, res) => {
     if(coverMatch&&req.method==='GET'){const image=await manga.coverImage(coverMatch[1],coverMatch[2]);res.writeHead(200,{'Content-Type':image.type,'Content-Length':image.data.length,'Cache-Control':'public, max-age=3600','X-Content-Type-Options':'nosniff'}).end(image.data);return;}
     const mangaMatch=/^\/manga-page\/([a-f0-9-]{36})\/(\d+)$/.exec(path);
     if(mangaMatch&&req.method==='GET'){const image=await manga.pageImage(mangaMatch[1],mangaMatch[2]);res.writeHead(200,{'Content-Type':image.type,'Content-Length':image.data.length,'Cache-Control':'private, max-age=300','X-Content-Type-Options':'nosniff'}).end(image.data);return;}
-    const streamMatch = /^\/video\/([a-f0-9]{48})$/.exec(path);
+    const streamMatch = /^\/(?:video|preview-video)\/([a-f0-9]{48})$/.exec(path);
     if (streamMatch && ['GET', 'HEAD'].includes(req.method)) {
       const session = sessions.get(streamMatch[1]);
       if (!session?.video) { res.writeHead(404).end(); return; }
+      let requestedRange=req.headers.range;
+      if(session.preview){
+        if(!session.size){const info=await fetch(session.video.url,{headers:{Referer:session.video.referrer,Range:'bytes=0-0'},signal:AbortSignal.timeout(15000)});session.size=Number(info.headers.get('content-range')?.split('/')[1]);await info.body?.cancel();if(!Number.isSafeInteger(session.size)||session.size<1)throw Error('No se pudo preparar la vista previa.');}
+        let range;try{range=parseRange(requestedRange||'bytes=0-',session.size);}catch{res.writeHead(416,{'Content-Range':'bytes */'+session.size}).end();return;}
+        requestedRange='bytes='+range.start+'-'+Math.min(range.end,range.start+512*1024-1);
+      }
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 30000);
       res.once('close', () => controller.abort());
       let upstream;
       try {
         upstream = await fetch(session.video.url, {
-          method: req.method, headers: { Referer: session.video.referrer, ...(req.headers.range ? { Range: req.headers.range } : {}) },
+          method: req.method, headers: { Referer: session.video.referrer, ...(requestedRange ? { Range: requestedRange } : {}) },
           signal: controller.signal
         });
       } finally { clearTimeout(timer); }
@@ -85,11 +92,15 @@ const server = createServer(async (req, res) => {
     if (path === '/api/catalog/anime') { json(res, 200, await catalog.anime(input.path)); return; }
     if (path === '/api/catalog/episode') { json(res, 200, await catalog.episode(input.path)); return; }
     if (path === '/api/episode') { json(res, 200, await inspect(input.url)); return; }
+    if (path === '/api/ratings/lookup') {json(res,200,await ratings.lookup(input));return;}
+    if (path === '/api/ratings/detail') {json(res,200,await ratings.detail(input));return;}
+    if (path === '/api/ratings/ranking') {json(res,200,await ratings.ranking(input));return;}
     if (path === '/api/manga/search') { json(res, 200, await manga.search(input)); return; }
     if (path === '/api/manga/detail') { json(res, 200, await manga.detail(input)); return; }
     if (path === '/api/manga/chapter') { json(res, 200, await manga.chapter(input)); return; }
     if (path === '/api/play') {
       const url = new URL(input.url);
+      if(input.preview&&url.hostname==='mega.nz')throw Error('Las vistas previas usan YourUpload.');
       let session;
       if (url.hostname === 'mega.nz') {
         const file = await resolveMega(url.href);
@@ -99,8 +110,8 @@ const server = createServer(async (req, res) => {
       }
       while (sessions.size >= 8) await remove(sessions.keys().next().value);
       const id = randomBytes(24).toString('hex');
-      session.created = Date.now(); sessions.set(id, session);
-      json(res, 200, { id, name: session.name, src: session.bridge?.url || '/video/' + id }); return;
+      session.created = Date.now();session.preview=input.preview===true;sessions.set(id, session);
+      json(res, 200, { id, name: session.name, src: session.bridge?.url || (session.preview?'/preview-video/':'/video/') + id }); return;
     }
     if (path === '/api/vlc') {
       const session = sessions.get(input.id);

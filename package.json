@@ -1,6 +1,6 @@
 {
   "name": "@diegolopez02081/anime-local",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Local anime catalog, watch lists and direct YourUpload/MEGA playback.",
   "type": "module",
   "license": "MIT",
@@ -33,7 +33,10 @@
     "README.md",
     "sources.mjs",
     "manga.mjs",
-    "manga-ui.mjs"
+    "manga-ui.mjs",
+    "ratings.mjs",
+    "ratings-ui.mjs",
+    "previews.mjs"
   ],
   "repository": {
     "type": "git",

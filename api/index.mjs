@@ -1,3 +1,4 @@
+import * as ratings from '../ratings.mjs';
 import * as manga from '../manga.mjs';
 import { inspect } from '../sources.mjs';
 import { readFile } from 'node:fs/promises';
@@ -26,8 +27,9 @@ async function collect(stream, length) {
  if(total!==length)throw Error('El proveedor entregó una respuesta incompleta.');
  return Buffer.concat(chunks,total);
 }
-async function media(req,res,source) {
+async function media(req,res,source,preview=false) {
  const url=validateSource(source);let size,file,video;
+ if(preview&&new URL(url).hostname==='mega.nz')throw Error('Las vistas previas usan YourUpload.');
  if(new URL(url).hostname==='mega.nz'){file=await sourceFile(url);size=file.size;}
  else{
   video=await resolveYourUpload(url);
@@ -36,7 +38,7 @@ async function media(req,res,source) {
   if(!info.ok||!Number.isSafeInteger(size)||size<=0)throw Error('El proveedor no informó el tamaño del MP4.');
  }
  let range;try{range=parseRange(req.headers.range||'bytes=0-',size);}catch{res.writeHead(416,{'Content-Range':'bytes */'+size}).end();return;}
- const start=range.start,end=Math.min(range.end,start+MAX-1),length=end-start+1;
+ const start=range.start,end=Math.min(range.end,start+(preview?512*1024:MAX)-1),length=end-start+1;
  const headers={'Content-Type':'video/mp4','Content-Length':length,'Content-Range':'bytes '+start+'-'+end+'/'+size,'Accept-Ranges':'bytes','Cache-Control':'no-store'};
  if(req.method==='HEAD'){res.writeHead(206,headers).end();return;}
  let data;
@@ -56,12 +58,12 @@ export default async function handler(req,res) {
   const query=new URL(req.url,'https://localhost').searchParams;
   const route=req.query?.route||query.get('route')||'home';
   const action=req.query?.action||query.get('action')||'';
-  if(['home','manual','profiles','manga-ui'].includes(route)){
-   const filename=route==='manga-ui'?'manga-ui.mjs':route==='profiles'?'profiles.mjs':route==='manual'?'web.html':'catalog.html';
+  if(['home','manual','profiles','manga-ui','ratings-ui','previews'].includes(route)){
+   const filename=['ratings-ui','previews'].includes(route)?route+'.mjs':route==='manga-ui'?'manga-ui.mjs':route==='profiles'?'profiles.mjs':route==='manual'?'web.html':'catalog.html';
    const html=(await readFile(new URL('../'+filename,import.meta.url),'utf8')).replaceAll('__API_TOKEN__','cloud');
-   res.setHeader('Content-Type',['profiles','manga-ui'].includes(route)?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
+   res.setHeader('Content-Type',['profiles','manga-ui','ratings-ui','previews'].includes(route)?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
    res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','DENY');
-   if(!['profiles','manga-ui'].includes(route))res.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; media-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
+   if(!['profiles','manga-ui','ratings-ui','previews'].includes(route))res.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; media-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
    res.end(html);return;
   }
   if(route==='image'){
@@ -82,10 +84,10 @@ export default async function handler(req,res) {
    const image=await manga.pageImage(req.query?.id||query.get('id'),req.query?.page||query.get('page'));
    res.writeHead(200,{'Content-Type':image.type,'Content-Length':image.data.length,'Cache-Control':'private, max-age=300','X-Content-Type-Options':'nosniff'}).end(image.data);return;
   }
-  if(route==='video'){
+  if(['video','preview-video'].includes(route)){
    if(!['GET','HEAD'].includes(req.method)){res.writeHead(405).end();return;}
    const id=req.query?.id||query.get('id');if(!id||id.length>1200)throw Error('Fuente no válida.');
-   await media(req,res,Buffer.from(id,'base64url').toString('utf8'));return;
+   await media(req,res,Buffer.from(id,'base64url').toString('utf8'),route==='preview-video');return;
   }
   if(route!=='api'||req.method!=='POST'){res.writeHead(404).end();return;}
   if(req.headers.origin&&new URL(req.headers.origin).host!==req.headers.host){send(res,403,{error:'Origen no autorizado.'});return;}
@@ -98,13 +100,17 @@ export default async function handler(req,res) {
   if(action==='catalog/anime'){send(res,200,await catalog.anime(input.path));return;}
   if(action==='catalog/episode'){send(res,200,await catalog.episode(input.path));return;}
   if(action==='episode'){send(res,200,await inspect(input.url));return;}
+  if(action==='ratings/lookup'){send(res,200,await ratings.lookup(input));return;}
+  if(action==='ratings/detail'){send(res,200,await ratings.detail(input));return;}
+  if(action==='ratings/ranking'){send(res,200,await ratings.ranking(input));return;}
   if(action==='manga/search'){send(res,200,await manga.search(input));return;}
   if(action==='manga/detail'){send(res,200,await manga.detail(input));return;}
   if(action==='manga/chapter'){send(res,200,await manga.chapter(input));return;}
   if(action==='play'){
    const source=validateSource(input.url);const id=Buffer.from(source).toString('base64url');
+   if(input.preview&&new URL(source).hostname==='mega.nz')throw Error('Las vistas previas usan YourUpload.');
    const name=new URL(source).hostname==='mega.nz'?(await sourceFile(source)).name:'YourUpload';
-   send(res,200,{id,name,src:'/video/'+id});return;
+   send(res,200,{id,name,src:(input.preview?'/preview-video/':'/video/')+id});return;
   }
   if(action==='close'){send(res,200,{ok:true});return;}
   if(action==='vlc'){send(res,501,{error:'Abrir VLC está disponible al ejecutar la versión local de npm.'});return;}

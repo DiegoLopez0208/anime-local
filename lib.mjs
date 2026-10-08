@@ -7,7 +7,7 @@ const nodeStreamApis = new WeakSet();
 
 export function parseEpisode(html) {
   const match = html.match(/\bvar\s+videos\s*=\s*(\[[^;]*\])\s*;/);
-  if (!match) throw new Error('TioAnime no publico la lista de servidores en el HTML.');
+  if (!match) throw new Error('No se encontraron opciones de reproducción para este episodio.');
   const rows = JSON.parse(match[1]);
   return rows.filter(row => Array.isArray(row) && typeof row[1] === 'string')
     .map(([name, url]) => ({ name, url }))

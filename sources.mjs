@@ -6,11 +6,11 @@ export function sourceUrl(value) {
  if (url.protocol !== 'https:' || url.username || url.password || url.port || url.search || url.hash) throw Error('Enlace de episodio no válido.');
  if (url.hostname === 'tioanime.com' && /^\/ver\/[a-zA-Z0-9_-]+$/.test(url.pathname)) return url;
  if (url.hostname === 'jkanime.net' && /^\/[a-zA-Z0-9_-]+\/\d+(?:\.\d+)?\/$/.test(url.pathname)) return url;
- throw Error('Pega un episodio de TioAnime o JKAnime.');
+ throw Error('Pega un enlace de episodio compatible.');
 }
 export function parseJk(html) {
  const match = html.match(/\bvar\s+servers\s*=\s*(\[[^;]*\])\s*;/);
- if (!match) throw Error('JKAnime no publicó la lista de servidores en el HTML.');
+ if (!match) throw Error('No se encontraron opciones de reproducción.');
  const available = JSON.parse(match[1]).map(row => {
   try {
    const url = new URL(Buffer.from(row.remote, 'base64').toString('utf8').trim());
@@ -24,7 +24,7 @@ export function parseJk(html) {
 export async function inspect(value) {
  const url = sourceUrl(value);let html;
  try { html = await getText(url.href); } catch(error) {
-  if(url.hostname==='jkanime.net' && error.message.includes('HTTP 403'))throw Error('JKAnime rechazó la consulta desde este servidor (HTTP 403). Prueba la versión local: npx @diegolopez02081/anime-local.');
+  if(url.hostname==='jkanime.net' && error.message.includes('HTTP 403'))throw Error('No se pudo consultar ese episodio desde la web (HTTP 403). Prueba la versión local: npx @diegolopez02081/anime-local.');
   throw error;
  }
  if (url.hostname === 'jkanime.net') return { source: 'JKAnime', ...parseJk(html) };

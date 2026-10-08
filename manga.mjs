@@ -1,7 +1,7 @@
 const BASE = 'https://api.mangadex.org';
 const cache = new Map(), pending = new Map();
 export function uuid(value) {
- if (typeof value !== 'string' || !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value)) throw Error('Identificador de MangaDex no válido.');
+ if (typeof value !== 'string' || !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value)) throw Error('Identificador de lectura no válido.');
  return value.toLowerCase();
 }
 const language = value => ['es','es-la','en'].includes(value) ? value : 'es';
@@ -11,9 +11,9 @@ async function request(path, ttl = 60000, refresh = false) {
  if(pending.has(path))return pending.get(path);
  const task=(async()=>{
   const response=await fetch(BASE+path,{headers:{'User-Agent':'AnimeLocal/0.2 (https://github.com/DiegoLopez0208/anime-local)'},signal:AbortSignal.timeout(20000)});
-  if(response.status===429)throw Error('MangaDex pidió una pausa. Intenta nuevamente en un minuto.');
-  if(!response.ok)throw Error('MangaDex respondió HTTP '+response.status+'.');
-  const data=await response.json();if(data.result!=='ok')throw Error('MangaDex no pudo completar la consulta.');
+  if(response.status===429)throw Error('La consulta necesita una pausa. Intenta nuevamente en un minuto.');
+  if(!response.ok)throw Error('La consulta respondió HTTP '+response.status+'.');
+  const data=await response.json();if(data.result!=='ok')throw Error('No se pudo completar la consulta.');
   while(cache.size>=100)cache.delete(cache.keys().next().value);
   cache.set(path,{data,until:Date.now()+ttl});return data;
  })().finally(()=>pending.delete(path));
@@ -23,7 +23,7 @@ const text = (values) => values?.es || values?.['es-la'] || values?.en || Object
 export function mangaItem(row) {
  const a=row.attributes||{}, cover=row.relationships?.find(item=>item.type==='cover_art')?.attributes?.fileName;
  const id=uuid(row.id);
- return {id,path:'/manga/'+id,title:text(a.title),synopsis:text(a.description),status:a.status,
+ return {id,path:'/manga/'+id,title:text(a.title),synopsis:text(a.description),status:a.status,malId:/^\d+$/.test(a.links?.mal||'')?Number(a.links.mal):null,
  type:({ja:'Manga',ko:'Manhwa',zh:'Manhua'})[a.originalLanguage]||'Cómic',
  image:cover&&/^[\w.-]+$/.test(cover)?'/manga-cover/'+id+'/'+cover+'.256.jpg':null,
  tags:(a.tags||[]).map(tag=>text(tag.attributes?.name)),languages:a.availableTranslatedLanguages||[]};
@@ -78,7 +78,7 @@ export async function chapter(input) {
  const mangaId=uuid(row.data.relationships.find(r=>r.type==='manga')?.id);
  const manga=await request('/manga/'+mangaId+'?includes[]=cover_art');
  if(manga.data.attributes.contentRating!=='safe')throw Error('Este catálogo solo incluye obras con clasificación safe.');
- if(row.data.attributes.externalUrl)throw Error('Este capítulo se lee en la página de su editor.');
+ if(row.data.attributes.externalUrl)throw Error('Este capítulo no está disponible aquí.');
  const result=await request('/at-home/server/'+id+'?forcePort443=true',30000,input.refresh===true);
  return {id,manga:mangaItem(manga.data),number:row.data.attributes.chapter,title:row.data.attributes.title,language:row.data.attributes.translatedLanguage,pages:pageUrls(result)};
 }

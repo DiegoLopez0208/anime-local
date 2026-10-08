@@ -3,7 +3,7 @@
   "functions": {
     "api/index.mjs": {
       "maxDuration": 60,
-      "includeFiles": "{catalog.html,web.html,profiles.mjs,manga-ui.mjs}"
+      "includeFiles": "{catalog.html,web.html,profiles.mjs,manga-ui.mjs,ratings-ui.mjs,previews.mjs}"
     }
   },
   "rewrites": [
@@ -24,6 +24,14 @@
       "destination": "/api/index?route=manga-ui"
     },
     {
+      "source": "/ratings-ui.mjs",
+      "destination": "/api/index?route=ratings-ui"
+    },
+    {
+      "source": "/previews.mjs",
+      "destination": "/api/index?route=previews"
+    },
+    {
       "source": "/manga-cover/:id/:file",
       "destination": "/api/index?route=manga-cover&id=:id&file=:file"
     },
@@ -34,6 +42,10 @@
     {
       "source": "/image/:path*",
       "destination": "/api/index?route=image&path=:path*"
+    },
+    {
+      "source": "/preview-video/:id",
+      "destination": "/api/index?route=preview-video&id=:id"
     },
     {
       "source": "/video/:id",

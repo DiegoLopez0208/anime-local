@@ -7,7 +7,7 @@ const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
 export function sourcePath(value, prefix) {
   const url = new URL(value, base);
   if (url.origin !== base || !url.pathname.startsWith(prefix) || !/^\/[a-zA-Z0-9/_-]+$/.test(url.pathname))
-    throw new Error('Ruta de TioAnime no valida.');
+    throw new Error('Ruta de catálogo no válida.');
   return url.pathname;
 }
 export function imagePath(value) {
@@ -45,12 +45,12 @@ export function parseHome(html) {
   const $ = load(html);
   const episodes = cards($, 'article.episode', '/ver/');
   const anime = cards($, 'article.anime:not(.media)', '/anime/');
-  if (!episodes.length && !anime.length) throw new Error('No se pudo leer el catalogo de TioAnime.');
+  if (!episodes.length && !anime.length) throw new Error('No se pudo cargar el catálogo.');
   return { episodes, anime, fetchedAt: new Date().toISOString() };
 }
 export function parseDirectory(html, page = 1) {
   const $ = load(html);
-  if (!$('.animes').length) throw new Error('No se pudo leer el directorio de TioAnime.');
+  if (!$('.animes').length) throw new Error('No se pudo cargar el directorio.');
   const items = cards($, '.animes article.anime', '/anime/');
   const pages = [];
   $('.pagination a').each((_, element) => {

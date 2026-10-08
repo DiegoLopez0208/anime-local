@@ -28,6 +28,11 @@ VLC must be installed in its standard Windows location, or set `VLC_PATH` to the
 - Recent episodes, recent anime, search, genres, status filters, and paginated catalog.
 - Series pages with synopsis, cover, genres, and ordered episodes.
 - Browser playback, provider switching, previous/next episodes, and local VLC launching.
+- MyAnimeList community scores on anime and reading detail pages, with separate anime/manga ranking pages. Public title metadata is cached for six hours; ambiguous anime titles require selecting the matching entry. No MyAnimeList login or account synchronization is used.
+- Personal scores from 1 to 10, saved per browser profile and included in library export/import.
+- A compact home page with Continue watching/reading, library type filters, and ordering by personal score or title.
+- Muted hover previews of up to five seconds on compatible anime cards. A 750 ms delay avoids playback during quick pointer movements. Only one preview can play; leaving the card or page releases it. Previews are disabled on touch devices, data-saving connections and reduced-motion preferences, and can be switched off manually. They use YourUpload only; MEGA is never opened for previews.
+- Neutral interface labels for playback choices and reading, without third-party catalog/provider branding.
 - Watch-list states: watching, planned, completed, paused, and dropped.
 - Last episode and playback position saved per browser profile.
 - Local registration/login and guest mode.
@@ -54,11 +59,13 @@ The scraper requests only the pages you browse and extracts data without executi
 
 YourUpload playback uses a fresh MP4 URL and the required Referer. MEGAJS decrypts the shared video while serving byte ranges. Provider availability and transfer quotas still apply. Unsupported providers are shown as unavailable; the app does not bypass DRM, accounts, or provider quotas. It does not remove advertisements burned into a media file.
 
+Preview byte-range responses are bounded to 512 KiB each on both local and hosted versions. Five seconds describes the playback duration, not an exact download limit: the browser also needs media metadata, seeks and buffering, so previews still consume bandwidth.
+
 The npm app listens on 127.0.0.1 only. Its local video sessions expire after two hours. Navigating away or switching providers closes the previous local session, including any VLC stream using it.
 
 ## Vercel adapter
 
-`api/index.mjs` and `vercel.json` implement stateless catalog and video endpoints for Vercel. Media responses are bounded to 4 MiB per request; the browser requests subsequent ranges as needed. The Vercel version does not launch VLC. Deployment and upstream playback must be checked live after deployment; providers may respond differently to datacenter IPs.
+`api/index.mjs` and `vercel.json` implement stateless catalog and video endpoints for Vercel. Media responses are bounded to 4 MiB per request (512 KiB for previews); the browser requests subsequent ranges as needed. The Vercel version does not launch VLC. Deployment and upstream playback must be checked live after deployment; providers may respond differently to datacenter IPs.
 
 ```sh
 npx vercel login
@@ -75,7 +82,7 @@ npm test
 npm run web
 ```
 
-There are 18 automated tests covering parsing, provider links, byte ranges, errors, local profile isolation, invalid passwords, import validation, and frontend syntax. Tests use synthetic fixtures and do not download episodes.
+There are 23 automated tests covering parsing, provider links, byte ranges, errors, local profile isolation, invalid passwords, import validation, frontend syntax, MAL scores/rankings, season matching, and personal-score persistence. Tests use synthetic fixtures and do not download episodes.
 
 Optional live checks against an episode of your choice:
 
@@ -90,3 +97,5 @@ Windows source-checkout launchers: `abrir-web.cmd` and `abrir-vlc.cmd`. The web 
 Source files: `catalog.mjs` (scraper), `catalog.html` (UI), `profiles.mjs` (browser profiles), `lib.mjs` (providers), `sources.mjs` (additional source inspector), `manga.mjs` (MangaDex adapter), `manga-ui.mjs` (reader UI), `local-server.mjs` (local API), `api/index.mjs` (Vercel adapter).
 
 MIT applies to this application's code. Third-party names and media remain their respective owners' property. No video files or cover images are distributed in the package.
+
+Ratings modules: ratings.mjs / ratings-ui.mjs (community and personal scores), previews.mjs (hover preview lifecycle).

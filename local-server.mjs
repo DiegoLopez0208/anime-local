@@ -40,7 +40,7 @@ const server = createServer(async (req, res) => {
     if (req.method === 'GET' && ['/','/reproductor'].includes(path)) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store',
         'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer',
-        'Content-Security-Policy': "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; media-src 'self' http://127.0.0.1:*; base-uri 'none'; frame-ancestors 'none'; form-action 'none'" }).end(path === '/reproductor' ? html : catalogHtml); return;
+        'Content-Security-Policy': "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; media-src 'self' http://127.0.0.1:*; base-uri 'none'; frame-ancestors 'none'; form-action 'none'" }).end(path === '/reproductor' ? html : catalogHtml); return;
     }
     if (req.method === 'GET' && path.startsWith('/image/')) {
       const image = path.slice('/image'.length);
@@ -50,6 +50,8 @@ const server = createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': response.headers.get('content-type'), 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
       await pipeline(Readable.fromWeb(response.body), res); return;
     }
+    const mangaMatch=/^\/manga-page\/([a-f0-9-]{36})\/(\d+)$/.exec(path);
+    if(mangaMatch&&req.method==='GET'){const image=await manga.pageImage(mangaMatch[1],mangaMatch[2]);res.writeHead(200,{'Content-Type':image.type,'Content-Length':image.data.length,'Cache-Control':'private, max-age=300','X-Content-Type-Options':'nosniff'}).end(image.data);return;}
     const streamMatch = /^\/video\/([a-f0-9]{48})$/.exec(path);
     if (streamMatch && ['GET', 'HEAD'].includes(req.method)) {
       const session = sessions.get(streamMatch[1]);

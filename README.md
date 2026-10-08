@@ -50,7 +50,7 @@ See [OWASP's guidance on browser storage](https://cheatsheetseries.owasp.org/che
 
 ## How playback works
 
-The scraper requests only the pages you browse and extracts data without executing third-party JavaScript. TioAnime covers are proxied; MangaDex covers and chapter images load directly from its official image CDN. MangaDex metadata has a short bounded cache; catalog cache lifetimes are 2 minutes for the home page, 5 minutes for directory pages, 10 minutes for series, and 1 minute for episodes.
+The scraper requests only the pages you browse and extracts data without executing third-party JavaScript. TioAnime covers are proxied; MangaDex covers load from its official image CDN. Chapter pages are retrieved on demand, bounded to 4 MiB, with image health reports and one retry using refreshed delivery metadata. MangaDex metadata has a short bounded cache; catalog cache lifetimes are 2 minutes for the home page, 5 minutes for directory pages, 10 minutes for series, and 1 minute for episodes.
 
 YourUpload playback uses a fresh MP4 URL and the required Referer. MEGAJS decrypts the shared video while serving byte ranges. Provider availability and transfer quotas still apply. Unsupported providers are shown as unavailable; the app does not bypass DRM, accounts, or provider quotas. It does not remove advertisements burned into a media file.
 

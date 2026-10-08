@@ -6,8 +6,8 @@ export function uuid(value) {
 }
 const language = value => ['es','es-la','en'].includes(value) ? value : 'es';
 const offsetValue = value => Math.min(9900, Math.max(0, Math.floor(Number(value) || 0)));
-async function request(path, ttl = 60000) {
- const cached = cache.get(path); if(cached?.until > Date.now()) return cached.data;
+async function request(path, ttl = 60000, refresh = false) {
+ const cached = cache.get(path); if(!refresh && cached?.until > Date.now()) return cached.data;
  if(pending.has(path))return pending.get(path);
  const task=(async()=>{
   const response=await fetch(BASE+path,{headers:{'User-Agent':'AnimeLocal/0.2 (https://github.com/DiegoLopez0208/anime-local)'},signal:AbortSignal.timeout(20000)});
@@ -65,6 +65,30 @@ export async function chapter(input) {
  const manga=await request('/manga/'+mangaId+'?includes[]=cover_art');
  if(manga.data.attributes.contentRating!=='safe')throw Error('Este catálogo solo incluye obras con clasificación safe.');
  if(row.data.attributes.externalUrl)throw Error('Este capítulo se lee en la página de su editor.');
- const result=await request('/at-home/server/'+id+'?forcePort443=true',30000);
+ const result=await request('/at-home/server/'+id+'?forcePort443=true',30000,input.refresh===true);
  return {id,manga:mangaItem(manga.data),number:row.data.attributes.chapter,title:row.data.attributes.title,language:row.data.attributes.translatedLanguage,pages:pageUrls(result)};
+}
+export async function pageImage(id, page) {
+ id=uuid(id);page=Number(page);
+ if(!Number.isSafeInteger(page)||page<0||page>=1000)throw Error('Página no válida.');
+ let info=await chapter({id});
+ for(let attempt=0;attempt<2;attempt++){
+  const url=info.pages[page];if(!url)throw Error('Página fuera del capítulo.');
+  const started=Date.now();let bytes=0,cached=false,data,type,error;
+  try {
+   const response=await fetch(url,{signal:AbortSignal.timeout(25000)});
+   cached=response.headers.get('x-cache')?.startsWith('HIT')||false;
+   const chunks=[];
+   for await(const chunk of response.body){bytes+=chunk.length;if(bytes>4*1024*1024)throw Error('Imagen demasiado grande.');chunks.push(Buffer.from(chunk));}
+   if(!response.ok)throw Error('El servidor de imágenes respondió HTTP '+response.status+'.');
+   type=response.headers.get('content-type');if(!type?.startsWith('image/'))throw Error('El servidor no entregó una imagen.');
+   data=Buffer.concat(chunks,bytes);
+  } catch(caught){error=caught;}
+  if(new URL(url).hostname.endsWith('.mangadex.network')){
+   try{await fetch('https://api.mangadex.network/report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url,success:!error,bytes,duration:Date.now()-started,cached}),signal:AbortSignal.timeout(2000)}).then(r=>r.body?.cancel());}catch{}
+  }
+  if(!error)return {data,type};
+  if(attempt===1)throw error;
+  info=await chapter({id,refresh:true});
+ }
 }

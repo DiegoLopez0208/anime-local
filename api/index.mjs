@@ -61,7 +61,7 @@ export default async function handler(req,res) {
    const html=(await readFile(new URL('../'+filename,import.meta.url),'utf8')).replaceAll('__API_TOKEN__','cloud');
    res.setHeader('Content-Type',['profiles','manga-ui'].includes(route)?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
    res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','DENY');
-   if(!['profiles','manga-ui'].includes(route))res.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; media-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
+   if(!['profiles','manga-ui'].includes(route))res.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; media-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
    res.end(html);return;
   }
   if(route==='image'){
@@ -71,6 +71,11 @@ export default async function handler(req,res) {
    if(!response.ok||!response.headers.get('content-type')?.startsWith('image/')){res.writeHead(404).end();return;}
    const bytes=Buffer.from(await response.arrayBuffer());if(bytes.length>MAX)throw Error('Imagen demasiado grande.');
    res.writeHead(200,{'Content-Type':response.headers.get('content-type'),'Cache-Control':'public, max-age=86400','X-Content-Type-Options':'nosniff'}).end(bytes);return;
+  }
+  if(route==='manga-image'){
+   if(req.method!=='GET'){res.writeHead(405).end();return;}
+   const image=await manga.pageImage(req.query?.id||query.get('id'),req.query?.page||query.get('page'));
+   res.writeHead(200,{'Content-Type':image.type,'Content-Length':image.data.length,'Cache-Control':'private, max-age=300','X-Content-Type-Options':'nosniff'}).end(image.data);return;
   }
   if(route==='video'){
    if(!['GET','HEAD'].includes(req.method)){res.writeHead(405).end();return;}

@@ -24,6 +24,10 @@
       "destination": "/api/index?route=manga-ui"
     },
     {
+      "source": "/manga-page/:id/:page",
+      "destination": "/api/index?route=manga-image&id=:id&page=:page"
+    },
+    {
       "source": "/image/:path*",
       "destination": "/api/index?route=image&path=:path*"
     },

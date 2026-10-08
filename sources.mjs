@@ -24,7 +24,7 @@ export function parseJk(html) {
 export async function inspect(value) {
  const url = sourceUrl(value);let html;
  try { html = await getText(url.href); } catch(error) {
-  if(url.hostname==='jkanime.net' && error.message.includes('HTTP 403'))throw Error('JKAnime rechaz? la consulta desde este servidor (HTTP 403). Prueba la versi?n local: npx @diegolopez02081/anime-local.');
+  if(url.hostname==='jkanime.net' && error.message.includes('HTTP 403'))throw Error('JKAnime rechazó la consulta desde este servidor (HTTP 403). Prueba la versión local: npx @diegolopez02081/anime-local.');
   throw error;
  }
  if (url.hostname === 'jkanime.net') return { source: 'JKAnime', ...parseJk(html) };

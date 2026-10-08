@@ -58,12 +58,15 @@ export default async function handler(req,res) {
   const query=new URL(req.url,'https://localhost').searchParams;
   const route=req.query?.route||query.get('route')||'home';
   const action=req.query?.action||query.get('action')||'';
-  if(['home','manual','profiles','manga-ui','ratings-ui','previews'].includes(route)){
-   const filename=['ratings-ui','previews'].includes(route)?route+'.mjs':route==='manga-ui'?'manga-ui.mjs':route==='profiles'?'profiles.mjs':route==='manual'?'web.html':'catalog.html';
+  if(route==='license'){
+   res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','X-Content-Type-Options':'nosniff','Cache-Control':'public, max-age=3600'}).end(await readFile(new URL('../LICENSE',import.meta.url),'utf8'));return;
+  }
+  if(['home','manual','profiles','manga-ui','ratings-ui','previews','reader-cache'].includes(route)){
+   const filename=['ratings-ui','previews','reader-cache'].includes(route)?route+'.mjs':route==='manga-ui'?'manga-ui.mjs':route==='profiles'?'profiles.mjs':route==='manual'?'web.html':'catalog.html';
    const html=(await readFile(new URL('../'+filename,import.meta.url),'utf8')).replaceAll('__API_TOKEN__','cloud');
-   res.setHeader('Content-Type',['profiles','manga-ui','ratings-ui','previews'].includes(route)?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
+   res.setHeader('Content-Type',['profiles','manga-ui','ratings-ui','previews','reader-cache'].includes(route)?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
    res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','DENY');
-   if(!['profiles','manga-ui','ratings-ui','previews'].includes(route))res.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; media-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
+   if(!['profiles','manga-ui','ratings-ui','previews','reader-cache'].includes(route))res.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; media-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
    res.end(html);return;
   }
   if(route==='image'){

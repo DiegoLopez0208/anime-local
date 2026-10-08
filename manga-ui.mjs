@@ -1,11 +1,8 @@
-let readerObserver, loaderObserver;
-const imageRequests = new Set(), imageBlobs = new Set();
+import { createReaderCache } from '/reader-cache.mjs?v=0.3.2';
+let readerObserver, loaderObserver, readerCache;
 function clearImages() {
  readerObserver?.disconnect(); loaderObserver?.disconnect();
- for (const controller of imageRequests) controller.abort();
- imageRequests.clear();
- for (const url of imageBlobs) URL.revokeObjectURL(url);
- imageBlobs.clear();
+ readerCache?.close();readerCache=null;
 }
 export async function renderManga(ctx) {
  clearImages();
@@ -41,42 +38,73 @@ export async function renderManga(ctx) {
   const chapterLink=ch=>'#'+ch.path+params({idioma:lang,offset});
   const prior=profiles.current().library[data.manga.path];
   profiles.setAnime(data.manga,prior&&prior.status!=='planned'?prior.status:'watching',{lastEpisode:data.id?'/leer/'+data.id:null,lastWatchedAt:Date.now()});
-  let page=Math.max(0,Math.min(data.pages.length-1,Math.floor(profiles.current().progress[path]?.time||0))),mode='page';
+  let page=Math.max(0,Math.min(data.pages.length-1,Math.floor(profiles.current().progress[path]?.time||0))),mode='five',readingPage=page;
   document.title=data.manga.title+' · Capítulo '+data.number;
-  root.innerHTML='<div class="crumb"><a href="#'+esc(data.manga.path+params({idioma:lang,offset}))+'">'+esc(data.manga.title)+'</a> / Capítulo '+esc(data.number||'Especial')+'</div><div class="sectionhead"><h1>Capítulo '+esc(data.number||'Especial')+'</h1><select id="readmode" aria-label="Modo de lectura"><option value="page">Página por página</option><option value="vertical">Lectura vertical</option></select></div><div class="readercontrols"><button id="pageprevious" class="secondary">← Página</button><select id="readpage" aria-label="Página del capítulo">'+data.pages.map((_,i)=>'<option value="'+i+'">Página '+(i+1)+' / '+data.pages.length+'</option>').join('')+'</select><button id="pagenext" class="secondary">Página →</button></div><p id="readstatus" role="status" class="sub">Cargando página…</p><div id="reader" class="reader"></div><div class="watchbar">'+(index>0?'<a class="button secondary" href="'+esc(chapterLink(list[index-1]))+'">← Capítulo anterior</a>':'')+'<a class="button secondary" href="#'+esc(data.manga.path+params({idioma:lang,offset}))+'">Lista de capítulos</a>'+(index>=0&&index<list.length-1?'<a class="button" href="'+esc(chapterLink(list[index+1]))+'">Siguiente capítulo →</a>':'')+'</div>';
+  root.innerHTML='<div class="crumb"><a href="#'+esc(data.manga.path+params({idioma:lang,offset}))+'">'+esc(data.manga.title)+'</a> / Capítulo '+esc(data.number||'Especial')+'</div><div class="sectionhead"><h1>Capítulo '+esc(data.number||'Especial')+'</h1><select id="readmode" aria-label="Modo de lectura"><option value="five">5 páginas seguidas</option><option value="page">Página por página</option><option value="vertical">Lectura vertical</option></select></div><div class="readercontrols"><button id="pageprevious" class="secondary">← Página</button><select id="readpage" aria-label="Página del capítulo">'+data.pages.map((_,i)=>'<option value="'+i+'">Página '+(i+1)+' / '+data.pages.length+'</option>').join('')+'</select><button id="pagenext" class="secondary">Página →</button></div><p id="readstatus" role="status" class="sub">Cargando página…</p><div id="reader" class="reader"></div><div class="watchbar">'+(index>0?'<a class="button secondary" href="'+esc(chapterLink(list[index-1]))+'">← Capítulo anterior</a>':'')+'<a class="button secondary" href="#'+esc(data.manga.path+params({idioma:lang,offset}))+'">Lista de capítulos</a>'+(index>=0&&index<list.length-1?'<a class="button" href="'+esc(chapterLink(list[index+1]))+'">Siguiente capítulo →</a>':'')+'</div>';
   const reader=root.querySelector('#reader'), select=root.querySelector('#readpage'), status=root.querySelector('#readstatus');
-  async function loadPage(img,i,retry=true) {
-   const source='/manga-page/'+id+'/'+i, controller=new AbortController();imageRequests.add(controller);
-   try {
-    const response=await fetch(source,{credentials:'omit',referrerPolicy:'no-referrer',signal:controller.signal});
+  async function fetchPage(i,signal,retry=true){
+   try{
+    const response=await fetch('/manga-page/'+id+'/'+i,{credentials:'omit',referrerPolicy:'no-referrer',signal});
     const blob=await response.blob();
     if(!response.ok||!blob.type.startsWith('image/'))throw Error('Imagen no disponible.');
-
+    return blob;
+   }catch(error){
+    if(signal.aborted||!active())throw error;
+    if(retry){const renewed=await api('manga/chapter',{id,refresh:true},signal);data.pages=renewed.pages;return fetchPage(i,signal,false);}
+    throw error;
+   }
+  }
+  const cache=createReaderCache({load:fetchPage});readerCache=cache;
+  const windowPages=()=>Array.from({length:Math.min(5,data.pages.length-page)},(_,i)=>page+i);
+  function loadPage(img,i){
+   cache.get(i).then(url=>{
     if(!active()||!img.isConnected)return;
-    const url=URL.createObjectURL(blob);imageBlobs.add(url);img.style.minHeight='0';img.src=url;
-   } catch(error) {
-    if(controller.signal.aborted||!active()||!img.isConnected)return;
-
-    if(retry){try{const renewed=await api('manga/chapter',{id,refresh:true});if(!active()||!img.isConnected)return;data.pages=renewed.pages;return await loadPage(img,i,false);}catch{}}
-    status.textContent='La imagen no pudo cargar. Vuelve a abrir el capítulo para renovar sus enlaces.';
-   } finally {imageRequests.delete(controller);}
+    img.src=url;
+   }).catch(error=>{
+    if(error.name!=='AbortError'&&active()&&img.isConnected)status.textContent='La página '+(i+1)+' no pudo cargar. Vuelve a elegirla para reintentar.';
+   });
   }
   const attach=img=>{
-   img.onload=()=>{if(!active())return;status.textContent='Capítulo guardado en Mi lista.';if(mode==='page')profiles.saveProgress(path,page);};
-   img.onerror=()=>{if(active())status.textContent='La imagen no pudo cargar. Vuelve a abrir el capítulo para renovar sus enlaces.';};
+   img.onload=()=>{if(!active()||!img.isConnected)return;img.style.minHeight='0';status.textContent='Capítulo guardado en Mi lista.';if(mode==='page')profiles.saveProgress(path,page);};
+   img.onerror=()=>{if(active()&&img.isConnected)status.textContent='La imagen no pudo cargar. Vuelve a abrir el capítulo para renovar sus enlaces.';};
   };
   const draw=()=>{
-   clearImages();
-   loaderObserver=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){loaderObserver.unobserve(entry.target);loadPage(entry.target,Number(entry.target.dataset.page));}},{rootMargin:'800px 0px'});
-   if(mode==='vertical')readerObserver=new IntersectionObserver(entries=>{if(!active())return;const visible=entries.filter(x=>x.isIntersecting).sort((a,b)=>Math.abs(a.boundingClientRect.top)-Math.abs(b.boundingClientRect.top));if(visible[0]){page=Number(visible[0].target.dataset.page);select.value=page;profiles.saveProgress(path,page);}},{rootMargin:'0px 0px -70% 0px',threshold:0});
-   select.value=page;root.querySelector('#pageprevious').disabled=page===0;root.querySelector('#pagenext').disabled=page>=data.pages.length-1;
-   reader.replaceChildren();status.textContent='Cargando página…';
-   const indexes=mode==='vertical'?data.pages.map((_,i)=>i):[page];
-   for(const i of indexes){const img=document.createElement('img');img.alt='Página '+(i+1);img.style.minHeight='500px';attach(img);img.dataset.page=i;reader.append(img);if(mode==='vertical'){readerObserver.observe(img);loaderObserver.observe(img);}else loadPage(img,i);}
+   readerObserver?.disconnect();loaderObserver?.disconnect();
+   const ahead=windowPages();cache.retain(mode==='vertical'?null:ahead);
+   select.value=page;
+   const step=mode==='five'?5:1,previous=root.querySelector('#pageprevious'),next=root.querySelector('#pagenext');
+   previous.disabled=page===0;next.disabled=page+step>=data.pages.length;
+   previous.textContent=mode==='five'?'← 5 anteriores':'← Página';next.textContent=mode==='five'?'5 siguientes →':'Página →';
+   reader.replaceChildren();status.textContent=mode==='five'?'Cargando páginas '+(page+1)+' a '+(ahead.at(-1)+1)+'…':'Cargando página…';
+   const indexes=mode==='vertical'?data.pages.map((_,i)=>i):mode==='five'?ahead:[page];
+   if(mode!=='page')readerObserver=new IntersectionObserver(entries=>{
+    if(!active())return;
+    const visible=entries.filter(x=>x.isIntersecting).sort((a,b)=>Math.abs(a.boundingClientRect.top)-Math.abs(b.boundingClientRect.top));
+    if(visible[0]){
+     readingPage=Number(visible[0].target.dataset.page);profiles.saveProgress(path,readingPage);
+     if(mode==='vertical'){page=readingPage;select.value=page;previous.disabled=page===0;next.disabled=page>=data.pages.length-1;}
+    }
+   },{rootMargin:'0px 0px -70% 0px',threshold:0});
+   if(mode==='vertical')loaderObserver=new IntersectionObserver(entries=>{
+    for(const entry of entries)if(entry.isIntersecting){loaderObserver.unobserve(entry.target);loadPage(entry.target,Number(entry.target.dataset.page));}
+   },{rootMargin:'800px 0px'});
+   for(const i of indexes){
+    const img=document.createElement('img');img.alt='Página '+(i+1);img.style.minHeight='500px';attach(img);img.dataset.page=i;reader.append(img);
+    if(mode!=='page')readerObserver.observe(img);
+    if(mode==='vertical')loaderObserver.observe(img);else loadPage(img,i);
+   }
+   // In single-page mode the same five-page window is prepared in the background.
+   if(mode==='page')for(const i of ahead)cache.get(i).catch(()=>{});
   };
-  const change=n=>{page=Math.max(0,Math.min(data.pages.length-1,n));mode='page';root.querySelector('#readmode').value=mode;draw();};
-  root.querySelector('#pageprevious').onclick=()=>change(page-1);root.querySelector('#pagenext').onclick=()=>change(page+1);select.onchange=()=>change(Number(select.value));
-  root.querySelector('#readmode').onchange=e=>{mode=e.target.value;draw();};
+  const change=n=>{
+   page=Math.max(0,Math.min(data.pages.length-1,n));readingPage=page;
+   profiles.saveProgress(path,page);
+   if(mode==='vertical')mode='five';
+   root.querySelector('#readmode').value=mode;draw();
+  };
+  root.querySelector('#pageprevious').onclick=()=>change(page-(mode==='five'?5:1));
+  root.querySelector('#pagenext').onclick=()=>change(page+(mode==='five'?5:1));select.onchange=()=>change(Number(select.value));
+  root.querySelector('#readmode').onchange=e=>{mode=e.target.value;page=readingPage;draw();};
   draw();return true;
  }
  return false;

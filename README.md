@@ -1,5 +1,7 @@
 # Anime Local
 
+[License: MIT](LICENSE)
+
 [Open the hosted app](https://anime-local-nine.vercel.app).
 
 A small local anime and manga catalog with watch lists, browser profiles, and direct YourUpload/MEGA playback. The interface is in Spanish.
@@ -41,7 +43,7 @@ VLC must be installed in its standard Windows location, or set `VLC_PATH` to the
 - Manual source inspector/player at `/reproductor`, supporting TioAnime and JKAnime episode links. JKAnime currently rejects Vercel datacenter requests with HTTP 403; use the local app for that source. Its published MEGA links were validated locally.
 - MangaDex manga, manhwa and manhua search with Japanese/Korean/Chinese origin filters, combined Spanish/Latin American Spanish and English chapter filters, pagination and cover art.
 - Search checks actual readable chapter feeds before displaying a work: historical translation metadata can refer to chapters that are no longer available. Spanish and Latin American Spanish are queried together; the selected language is preserved when opening a detail page. A detail page with no readable chapters offers another supported language only when chapters are actually available. Upstream metadata requests are spaced 260 ms apart, chapter availability is cached for five minutes, and at most three search availability lookups run concurrently.
-- Chapter reader with page controls and vertical mode; reading position and last chapter saved in the same local library. Only publicly available chapters classified as safe are included. External publisher chapters are labeled rather than embedded.
+- Chapter reader opens five consecutive pages by default, preparing the current page and four following pages with at most two concurrent image downloads. Overlapping pages are reused from the chapter cache, including in single-page mode. Moving to another chapter or leaving the reader cancels pending work and releases image object URLs. Single-page and vertical reading modes remain available; reading position and last chapter saved in the same local library. Only publicly available chapters classified as safe are included. External publisher chapters are labeled rather than embedded.
 - AnimeFLV was investigated but returned HTTP 522 during verification; no working adapter is claimed.
 
 ## Local profiles are not server authentication
@@ -83,7 +85,7 @@ npm test
 npm run web
 ```
 
-There are 24 automated tests covering parsing, provider links, byte ranges, errors, local profile isolation, invalid passwords, import validation, frontend syntax, MAL scores/rankings, season matching, and personal-score persistence. Tests use synthetic fixtures and do not download episodes.
+There are 27 automated tests covering parsing, provider links, byte ranges, errors, local profile isolation, invalid passwords, import validation, frontend syntax, MAL scores/rankings, season matching, personal-score persistence, and reader-cache reuse, concurrency, cancellation and retry. Tests use synthetic fixtures and do not download episodes.
 
 Optional live checks against an episode of your choice:
 
@@ -97,6 +99,6 @@ Windows source-checkout launchers: `abrir-web.cmd` and `abrir-vlc.cmd`. The web 
 
 Source files: `catalog.mjs` (scraper), `catalog.html` (UI), `profiles.mjs` (browser profiles), `lib.mjs` (providers), `sources.mjs` (additional source inspector), `manga.mjs` (MangaDex adapter), `manga-ui.mjs` (reader UI), `local-server.mjs` (local API), `api/index.mjs` (Vercel adapter).
 
-MIT applies to this application's code. Third-party names and media remain their respective owners' property. No video files or cover images are distributed in the package.
+The code is licensed under the [MIT License](LICENSE), copyright 2026 Diego Lopez. The hosted app also exposes the license at [/license](https://anime-local-nine.vercel.app/license). Third-party names and media remain their respective owners' property. No video files or cover images are distributed in the package.
 
 Ratings modules: ratings.mjs / ratings-ui.mjs (community and personal scores), previews.mjs (hover preview lifecycle).

@@ -37,12 +37,12 @@ input,select{background:#202728;border-color:#455152}button.secondary,.button.se
 <a class="skip" href="#content">Saltar al contenido</a>
 <header><div class="bar"><a class="logo" href="#/">anime<span>local.</span></a><nav aria-label="Principal"><a id="navhome" href="#/">Inicio</a><a id="navdirectory" href="#/directorio">Directorio</a><a id="navmanga" href="#/mangas">Lecturas</a><a id="navranking" href="#/ranking">Ranking MAL</a><a id="navlibrary" href="#/mi-lista">Mi lista</a></nav><form id="searchform" role="search"><input id="query" aria-label="Buscar anime" placeholder="Buscar un anime…" maxlength="120"><button aria-label="Buscar">Buscar</button></form><button id="previewtoggle" class="secondary preview-toggle" aria-pressed="true">Vistas previas</button><button id="account" class="secondary profilebutton">Entrar</button></div></header>
 <main id="content" tabindex="-1"><div class="loading">Cargando catálogo…</div></main>
-<footer><span>Anime local · Tus series y lecturas.</span><a href="/reproductor">Reproductor manual ↗</a></footer>
+<footer><span>Anime local · Tus series y lecturas.</span><span><a href="/license" target="_blank" rel="noopener">Licencia MIT</a> · <a href="/reproductor">Reproductor manual ↗</a></span></footer>
 <dialog id="authdialog" class="dialog" aria-labelledby="authtitle"><div class="dialoghead"><h2 id="authtitle">Tu perfil local</h2><button id="authclose" aria-label="Cerrar">✕</button></div><p>Tu lista y tu perfil se guardan solo en este navegador. No son cuentas de servidor ni sincronizan entre dispositivos.</p><div class="authswitch"><button id="tablogin">Entrar</button><button id="tabregister" class="secondary">Crear perfil</button></div><form id="authform"><label for="username">Nombre de perfil</label><input id="username" autocomplete="username" required minlength="2" maxlength="32"><label for="password">Contraseña local</label><input id="password" type="password" autocomplete="current-password" required maxlength="256"><div id="autherror" class="autherror" role="alert"></div><button id="authsubmit" class="authsubmit">Entrar</button></form><p>No uses aquí una contraseña que uses en otro servicio.</p></dialog>
 <script type="module">
-import { renderManga } from '/manga-ui.mjs?v=0.3.1';
-import { mountRatings, ratingOptions, renderRanking } from '/ratings-ui.mjs?v=0.3.1';
-import { previews } from '/previews.mjs?v=0.3.1';
+import { renderManga } from '/manga-ui.mjs?v=0.3.2';
+import { mountRatings, ratingOptions, renderRanking } from '/ratings-ui.mjs?v=0.3.2';
+import { previews } from '/previews.mjs?v=0.3.2';
 import { Profiles, STATUSES } from '/profiles.mjs';
 const token='__API_TOKEN__', $=id=>document.getElementById(id);
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));

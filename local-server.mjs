@@ -34,7 +34,10 @@ const server = createServer(async (req, res) => {
   try {
     if (req.headers.host !== '127.0.0.1:' + port) { res.writeHead(403).end(); return; }
     const path = new URL(req.url, origin).pathname;
-    if (req.method === 'GET' && ['/profiles.mjs','/manga-ui.mjs','/ratings-ui.mjs','/previews.mjs'].includes(path)) {
+    if (req.method === 'GET' && path === '/license') {
+      res.writeHead(200, { 'Content-Type':'text/plain; charset=utf-8', 'X-Content-Type-Options':'nosniff', 'Cache-Control':'public, max-age=3600' }).end(await readFile(new URL('./LICENSE',import.meta.url),'utf8'));return;
+    }
+    if (req.method === 'GET' && ['/profiles.mjs','/manga-ui.mjs','/ratings-ui.mjs','/previews.mjs','/reader-cache.mjs'].includes(path)) {
       res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }).end(await readFile(new URL('.'+path, import.meta.url), 'utf8')); return;
     }
     if (req.method === 'GET' && path === '/favicon.ico') { res.writeHead(204).end(); return; }

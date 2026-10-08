@@ -3,7 +3,7 @@
   "functions": {
     "api/index.mjs": {
       "maxDuration": 60,
-      "includeFiles": "{catalog.html,web.html,profiles.mjs,manga-ui.mjs,ratings-ui.mjs,previews.mjs}"
+      "includeFiles": "{catalog.html,web.html,profiles.mjs,manga-ui.mjs,ratings-ui.mjs,previews.mjs,reader-cache.mjs,LICENSE}"
     }
   },
   "rewrites": [
@@ -14,6 +14,14 @@
     {
       "source": "/reproductor",
       "destination": "/api/index?route=manual"
+    },
+    {
+      "source": "/license",
+      "destination": "/api/index?route=license"
+    },
+    {
+      "source": "/reader-cache.mjs",
+      "destination": "/api/index?route=reader-cache"
     },
     {
       "source": "/profiles.mjs",

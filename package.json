@@ -1,6 +1,6 @@
 {
   "name": "@diegolopez02081/anime-local",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Local anime catalog, watch lists and direct YourUpload/MEGA playback.",
   "type": "module",
   "license": "MIT",

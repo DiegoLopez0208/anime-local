@@ -40,9 +40,9 @@ input,select{background:#202728;border-color:#455152}button.secondary,.button.se
 <footer><span>Anime local · Tus series y lecturas.</span><a href="/reproductor">Reproductor manual ↗</a></footer>
 <dialog id="authdialog" class="dialog" aria-labelledby="authtitle"><div class="dialoghead"><h2 id="authtitle">Tu perfil local</h2><button id="authclose" aria-label="Cerrar">✕</button></div><p>Tu lista y tu perfil se guardan solo en este navegador. No son cuentas de servidor ni sincronizan entre dispositivos.</p><div class="authswitch"><button id="tablogin">Entrar</button><button id="tabregister" class="secondary">Crear perfil</button></div><form id="authform"><label for="username">Nombre de perfil</label><input id="username" autocomplete="username" required minlength="2" maxlength="32"><label for="password">Contraseña local</label><input id="password" type="password" autocomplete="current-password" required maxlength="256"><div id="autherror" class="autherror" role="alert"></div><button id="authsubmit" class="authsubmit">Entrar</button></form><p>No uses aquí una contraseña que uses en otro servicio.</p></dialog>
 <script type="module">
-import { renderManga } from '/manga-ui.mjs?v=0.3.0';
-import { mountRatings, ratingOptions, renderRanking } from '/ratings-ui.mjs?v=0.3.0';
-import { previews } from '/previews.mjs?v=0.3.0';
+import { renderManga } from '/manga-ui.mjs?v=0.3.1';
+import { mountRatings, ratingOptions, renderRanking } from '/ratings-ui.mjs?v=0.3.1';
+import { previews } from '/previews.mjs?v=0.3.1';
 import { Profiles, STATUSES } from '/profiles.mjs';
 const token='__API_TOKEN__', $=id=>document.getElementById(id);
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -59,8 +59,8 @@ async function api(path,data={},signal){const response=await fetch('/api/'+path,
 const preview=previews({root:$('content'),api,button:$('previewtoggle')});
 async function release(){preview.stop();saveProgress(true);currentEpisode=null;currentInfo=null;playerBusy=false;const old=session;session=null;const video=$('video');if(video){video.pause();video.removeAttribute('src');video.load()}if(old)await api('close',{id:old.id}).catch(()=>{});}
 function image(src,alt,extra=''){if(/^https:\/\/uploads\.mangadex\.org\/covers\/[a-f0-9-]{36}\/[\w.-]+$/.test(src||''))src=src.replace('https://uploads.mangadex.org/covers/','/manga-cover/');return src?'<img src="'+esc(src)+'" alt="'+esc(alt)+'" '+extra+'>':'';}
-function card(item,isEpisode=false){const personal=profiles.current().library[item.path]?.rating;return '<a class="card" '+(/^(?:\/anime\/|\/ver\/)/.test(item.path)?'data-preview="'+esc(item.path)+'" ':'')+'href="#'+esc(item.path)+'"><div class="art">'+image(item.image,'','loading="lazy"')+(isEpisode?'<span class="tag">▶ Episodio</span>':'')+(personal?'<span class="personal-badge">★ '+personal+'</span>':'')+'</div><div class="title">'+esc(item.title)+'</div></a>';}
-function grid(items,episodes=false){return '<div class="grid '+(episodes?'episodes':'')+'">'+items.map(item=>card(item,episodes)).join('')+'</div>';}
+function card(item,isEpisode=false,suffix=''){const personal=profiles.current().library[item.path]?.rating;return '<a class="card" '+(/^(?:\/anime\/|\/ver\/)/.test(item.path)?'data-preview="'+esc(item.path)+'" ':'')+'href="#'+esc(item.path+suffix)+'"><div class="art">'+image(item.image,'','loading="lazy"')+(isEpisode?'<span class="tag">▶ Episodio</span>':'')+(personal?'<span class="personal-badge">★ '+personal+'</span>':'')+'</div><div class="title">'+esc(item.title)+'</div></a>';}
+function grid(items,episodes=false,suffix=''){return '<div class="grid '+(episodes?'episodes':'')+'">'+items.map(item=>card(item,episodes,suffix)).join('')+'</div>';}
 function episodeItems(info,selected){return info.episodes.map(ep=>'<a class="episodeitem '+(ep.path===selected?'current':'')+'" href="#'+esc(ep.path)+'">Episodio '+esc(ep.number)+(ep.date?'<small>'+esc(ep.date)+'</small>':'')+'</a>').join('');}
 function hrefDirectory(q,page=1,genre='',status=''){const params=new URLSearchParams();if(q)params.set('q',q);if(page>1)params.set('p',page);if(genre)params.set('genero',genre);if(status)params.set('status',status);return '#/directorio'+(params.size?'?'+params:'');}
 $('searchform').onsubmit=event=>{event.preventDefault();location.hash=hrefDirectory($('query').value.trim());};

@@ -39,7 +39,8 @@ VLC must be installed in its standard Windows location, or set `VLC_PATH` to the
 - JSON library export/import; exports contain no password hashes.
 - Optional visual crop of the top 6% of the video. This hides a burned-in corner watermark at the cost of removing part of the picture. It does not alter the source file or reconstruct hidden image pixels.
 - Manual source inspector/player at `/reproductor`, supporting TioAnime and JKAnime episode links. JKAnime currently rejects Vercel datacenter requests with HTTP 403; use the local app for that source. Its published MEGA links were validated locally.
-- MangaDex manga, manhwa and manhua search with Japanese/Korean/Chinese origin filters, Spanish/Latin American Spanish/English chapter filters, pagination and cover art.
+- MangaDex manga, manhwa and manhua search with Japanese/Korean/Chinese origin filters, combined Spanish/Latin American Spanish and English chapter filters, pagination and cover art.
+- Search checks actual readable chapter feeds before displaying a work: historical translation metadata can refer to chapters that are no longer available. Spanish and Latin American Spanish are queried together; the selected language is preserved when opening a detail page. A detail page with no readable chapters offers another supported language only when chapters are actually available. Upstream metadata requests are spaced 260 ms apart, chapter availability is cached for five minutes, and at most three search availability lookups run concurrently.
 - Chapter reader with page controls and vertical mode; reading position and last chapter saved in the same local library. Only publicly available chapters classified as safe are included. External publisher chapters are labeled rather than embedded.
 - AnimeFLV was investigated but returned HTTP 522 during verification; no working adapter is claimed.
 
@@ -82,7 +83,7 @@ npm test
 npm run web
 ```
 
-There are 23 automated tests covering parsing, provider links, byte ranges, errors, local profile isolation, invalid passwords, import validation, frontend syntax, MAL scores/rankings, season matching, and personal-score persistence. Tests use synthetic fixtures and do not download episodes.
+There are 24 automated tests covering parsing, provider links, byte ranges, errors, local profile isolation, invalid passwords, import validation, frontend syntax, MAL scores/rankings, season matching, and personal-score persistence. Tests use synthetic fixtures and do not download episodes.
 
 Optional live checks against an episode of your choice:
 

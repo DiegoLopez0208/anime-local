@@ -1,15 +1,19 @@
 const BASE = 'https://api.mangadex.org';
 const cache = new Map(), pending = new Map();
+let nextRequest=0;
 export function uuid(value) {
  if (typeof value !== 'string' || !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value)) throw Error('Identificador de lectura no válido.');
  return value.toLowerCase();
 }
-const language = value => ['es','es-la','en'].includes(value) ? value : 'es';
+const language = value => value==='en' ? 'en' : 'es';
+const languageCodes = value => language(value)==='es' ? ['es','es-la'] : ['en'];
 const offsetValue = value => Math.min(9900, Math.max(0, Math.floor(Number(value) || 0)));
 async function request(path, ttl = 60000, refresh = false) {
  const cached = cache.get(path); if(!refresh && cached?.until > Date.now()) return cached.data;
  if(pending.has(path))return pending.get(path);
+ const start=Math.max(Date.now(),nextRequest);nextRequest=start+260;
  const task=(async()=>{
+  if(start>Date.now())await new Promise(resolve=>setTimeout(resolve,start-Date.now()));
   const response=await fetch(BASE+path,{headers:{'User-Agent':'AnimeLocal/0.2 (https://github.com/DiegoLopez0208/anime-local)'},signal:AbortSignal.timeout(20000)});
   if(response.status===429)throw Error('La consulta necesita una pausa. Intenta nuevamente en un minuto.');
   if(!response.ok)throw Error('La consulta respondió HTTP '+response.status+'.');
@@ -43,12 +47,24 @@ export async function coverImage(id, filename) {
  return {type,data:Buffer.concat(chunks,size)};
 }
 export async function search(input={}) {
- const params=new URLSearchParams({limit:'24',offset:String(offsetValue(input.offset)),'includes[]':'cover_art','contentRating[]':'safe',hasAvailableChapters:'true','availableTranslatedLanguage[]':language(input.language)});
+ const lang=language(input.language),params=new URLSearchParams({limit:'24',offset:String(offsetValue(input.offset)),'includes[]':'cover_art','contentRating[]':'safe',hasAvailableChapters:'true'});
+ for(const code of languageCodes(lang))params.append('availableTranslatedLanguage[]',code);
  if(input.q)params.set('title',String(input.q).trim().slice(0,120));
  if(['ja','ko','zh'].includes(input.type))params.set('originalLanguage[]',input.type);
  params.set('order[followedCount]','desc');
  const result=await request('/manga?'+params);
- return {items:result.data.map(mangaItem),total:result.total,offset:result.offset,limit:result.limit};
+ const checked=new Array(result.data.length);let cursor=0;
+ // Check the feed, not historical translation metadata. Limit concurrent lookups.
+ await Promise.all(Array.from({length:Math.min(3,result.data.length)},async()=>{
+  while(cursor<result.data.length){const i=cursor++,row=result.data[i];const feed=await chapterFeed(uuid(row.id),lang,0,1);checked[i]=feed.data.some(readable)?{...mangaItem(row),chapterCount:feed.total}:null;}
+ }));
+ return {items:checked.filter(Boolean),total:result.total,offset:result.offset,limit:result.limit,language:lang};
+}
+const readable=row=>row.attributes.pages>0&&!row.attributes.externalUrl&&!row.attributes.isUnavailable;
+async function chapterFeed(id,lang,offset=0,limit=100){
+ const params=new URLSearchParams({limit:String(limit),offset:String(offset),includeEmptyPages:'0',includeExternalUrl:'0',includeUnavailable:'0','order[chapter]':'asc','order[volume]':'asc'});
+ for(const code of languageCodes(lang))params.append('translatedLanguage[]',code);
+ return request('/manga/'+id+'/feed?'+params,300000);
 }
 export async function detail(input) {
  const id=uuid(input.id), lang=language(input.language), offset=offsetValue(input.offset);
@@ -56,11 +72,12 @@ export async function detail(input) {
  const row=await request('/manga/'+id+'?includes[]=cover_art');
  const info=mangaItem(row.data);
  if(row.data.attributes.contentRating!=='safe')throw Error('Este catálogo solo incluye obras con clasificación safe.');
- const params=new URLSearchParams({limit:'100',offset:String(offset),'translatedLanguage[]':lang,includeEmptyPages:'0','order[chapter]':'asc','order[volume]':'asc'});
- const feed=await request('/manga/'+id+'/feed?'+params);
- return {...info,language:lang,total:feed.total,offset,limit:100,chapters:feed.data.map(row=>({
+ const feed=await chapterFeed(id,lang,offset);
+ const alternatives=[];
+ if(feed.total===0&&offset===0){const other=lang==='es'?'en':'es',available=await chapterFeed(id,other,0,1);if(available.data.some(readable))alternatives.push({language:other,total:available.total});}
+ return {...info,language:lang,total:feed.total,offset,limit:100,alternatives,chapters:feed.data.filter(readable).map(row=>({
   id:row.id,path:'/leer/'+row.id,number:row.attributes.chapter,title:row.attributes.title,
-  pages:row.attributes.pages,externalUrl:row.attributes.externalUrl,
+  pages:row.attributes.pages,externalUrl:row.attributes.externalUrl,language:row.attributes.translatedLanguage,
   group:row.relationships?.find(r=>r.type==='scanlation_group')?.id
  }))};
 }
@@ -78,6 +95,7 @@ export async function chapter(input) {
  const mangaId=uuid(row.data.relationships.find(r=>r.type==='manga')?.id);
  const manga=await request('/manga/'+mangaId+'?includes[]=cover_art');
  if(manga.data.attributes.contentRating!=='safe')throw Error('Este catálogo solo incluye obras con clasificación safe.');
+ if(row.data.attributes.isUnavailable||!row.data.attributes.pages)throw Error('Este capítulo ya no está disponible. Vuelve a la lista para elegir otro.');
  if(row.data.attributes.externalUrl)throw Error('Este capítulo no está disponible aquí.');
  const result=await request('/at-home/server/'+id+'?forcePort443=true',30000,input.refresh===true);
  return {id,manga:mangaItem(manga.data),number:row.data.attributes.chapter,title:row.data.attributes.title,language:row.data.attributes.translatedLanguage,pages:pageUrls(result)};

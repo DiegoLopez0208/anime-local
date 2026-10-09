@@ -18,7 +18,7 @@ The desktop window uses Electron with context isolation, sandboxing, and Node in
 
 ## Mobile installation
 
-Open [the mobile installation page](https://anime-local-nine.vercel.app/#/celular), also available in **Ajustes > Instalar en celular**.
+Use **Instalar app** in the hosted app's header, or open [the mobile installation page](https://anime-local-nine.vercel.app/#/celular). The header action opens the browser installation prompt when available, and otherwise opens the instructions. The guide remains accessible even when the browser does not emit an installation event. It is also available in **Ajustes > Instalar en celular**.
 
 - Android: open the hosted app in Chrome and use **Instalar Anime Local** when available, or the browser menu's install/add-to-home-screen action.
 - iPhone/iPad: open the hosted app in Safari, choose **Share > Add to Home Screen**, and confirm.
@@ -27,7 +27,7 @@ This is an installable web app (PWA), with an icon and standalone display mode. 
 
 Catalog browsing and playback require internet. The service worker caches only the offline explanation page and its small icon; it never caches library credentials, API responses, video ranges, or manga images. Navigation uses the network first so the app gets the latest interface. Profiles remain in device-local storage; some installation environments use separate storage, so export/import is still available to transfer your library. Local Node/Electron instances do not register this hosted-app worker.
 
-Web/CLI v0.4.1 includes mobile installation. The downloadable Windows binaries remain v0.4.0.
+Web/CLI v0.4.2 includes the visible installation entry and custom SVG, PNG and ICO favicons, with matching mobile icons. The downloadable Windows binaries remain v0.4.0.
 
 ## Run
 

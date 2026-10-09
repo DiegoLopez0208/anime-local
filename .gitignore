@@ -16,3 +16,5 @@ sample-*.yaml
 dist-desktop/
 
 !public/pwa-icons/*.png
+
+!public/favicon-32.png

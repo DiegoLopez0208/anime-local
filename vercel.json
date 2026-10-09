@@ -16,6 +16,18 @@
       "destination": "/api/index?route=manual"
     },
     {
+      "source": "/favicon.svg",
+      "destination": "/api/index?route=pwa&asset=/favicon.svg"
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "/api/index?route=pwa&asset=/favicon.ico"
+    },
+    {
+      "source": "/favicon-32.png",
+      "destination": "/api/index?route=pwa&asset=/favicon-32.png"
+    },
+    {
       "source": "/pwa-ui.mjs",
       "destination": "/api/index?route=pwa-ui"
     },

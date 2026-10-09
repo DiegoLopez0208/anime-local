@@ -1,12 +1,19 @@
 import { readFile } from 'node:fs/promises';
 const types={
+ '/favicon.svg':'image/svg+xml',
+ '/favicon.ico':'image/x-icon',
+ '/favicon-32.png':'image/png',
  '/manifest.webmanifest':'application/manifest+json; charset=utf-8',
  '/sw.js':'text/javascript; charset=utf-8',
  '/offline.html':'text/html; charset=utf-8',
  '/pwa-icons/icon-192.png':'image/png',
  '/pwa-icons/icon-512.png':'image/png',
  '/pwa-icons/maskable-512.png':'image/png',
- '/pwa-icons/apple-180.png':'image/png'
+ '/pwa-icons/apple-180.png':'image/png',
+ '/pwa-icons/icon-192-v2.png':'image/png',
+ '/pwa-icons/icon-512-v2.png':'image/png',
+ '/pwa-icons/maskable-512-v2.png':'image/png',
+ '/pwa-icons/apple-180-v2.png':'image/png'
 };
 export function pwaAsset(path){return Object.hasOwn(types,path)?{file:new URL('./public'+path,import.meta.url),type:types[path]}:null;}
 export async function servePwa(req,res){

@@ -6,6 +6,9 @@ import {pwaAsset,servePwa} from './pwa-assets.mjs';
 test('mobile assets have correct MIME and icon sizes and never expose arbitrary files',async()=>{
  const manifest=JSON.parse(await readFile(pwaAsset('/manifest.webmanifest').file,'utf8'));
  assert.equal(manifest.display,'standalone');assert.equal(manifest.scope,'/');
+ const ico=await readFile(pwaAsset('/favicon.ico').file);assert.equal(ico.readUInt16LE(2),1);assert.equal(ico.readUInt16LE(4),5);
+ for(let index=0;index<5;index++){const offset=ico.readUInt32LE(6+index*16+12);assert.equal(ico.subarray(offset+1,offset+4).toString(),'PNG');}
+ assert.equal(pwaAsset('/favicon.svg').type,'image/svg+xml');
  for(const icon of manifest.icons){
   const data=await readFile(pwaAsset(icon.src).file);
   assert.equal(data.subarray(1,4).toString(),'PNG');

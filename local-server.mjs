@@ -1,3 +1,4 @@
+import { servePwa } from './pwa-assets.mjs';
 import * as ratings from './ratings.mjs';
 import * as manga from './manga.mjs';
 import { inspect } from './sources.mjs';
@@ -34,17 +35,18 @@ const server = createServer(async (req, res) => {
   try {
     if (req.headers.host !== '127.0.0.1:' + port) { res.writeHead(403).end(); return; }
     const path = new URL(req.url, origin).pathname;
+    if(await servePwa(req,res))return;
     if (req.method === 'GET' && path === '/license') {
       res.writeHead(200, { 'Content-Type':'text/plain; charset=utf-8', 'X-Content-Type-Options':'nosniff', 'Cache-Control':'public, max-age=3600' }).end(await readFile(new URL('./LICENSE',import.meta.url),'utf8'));return;
     }
-    if (req.method === 'GET' && ['/profiles.mjs','/manga-ui.mjs','/ratings-ui.mjs','/previews.mjs','/reader-cache.mjs','/experience.mjs'].includes(path)) {
+    if (req.method === 'GET' && ['/profiles.mjs','/manga-ui.mjs','/ratings-ui.mjs','/previews.mjs','/reader-cache.mjs','/experience.mjs','/pwa-ui.mjs'].includes(path)) {
       res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }).end(await readFile(new URL('.'+path, import.meta.url), 'utf8')); return;
     }
     if (req.method === 'GET' && path === '/favicon.ico') { res.writeHead(204).end(); return; }
     if (req.method === 'GET' && ['/','/reproductor'].includes(path)) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store',
         'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer',
-        'Content-Security-Policy': "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; media-src 'self' http://127.0.0.1:*; base-uri 'none'; frame-ancestors 'none'; form-action 'none'" }).end(path === '/reproductor' ? html : catalogHtml); return;
+        'Content-Security-Policy': "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; manifest-src 'self'; worker-src 'self'; media-src 'self' http://127.0.0.1:*; base-uri 'none'; frame-ancestors 'none'; form-action 'none'" }).end(path === '/reproductor' ? html : catalogHtml); return;
     }
     if (req.method === 'GET' && path.startsWith('/image/')) {
       const image = path.slice('/image'.length);

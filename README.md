@@ -16,6 +16,19 @@ The desktop app stores its own profiles and library. Export your list from the w
 
 The desktop window uses Electron with context isolation, sandboxing, and Node integration disabled. Its bundled server listens on loopback port 5198. External navigation is restricted to canonical MyAnimeList entries and this project's release pages. Opening another instance focuses the existing window; closing the app stops its server.
 
+## Mobile installation
+
+Open [the mobile installation page](https://anime-local-nine.vercel.app/#/celular), also available in **Ajustes > Instalar en celular**.
+
+- Android: open the hosted app in Chrome and use **Instalar Anime Local** when available, or the browser menu's install/add-to-home-screen action.
+- iPhone/iPad: open the hosted app in Safari, choose **Share > Add to Home Screen**, and confirm.
+
+This is an installable web app (PWA), with an icon and standalone display mode. It is not a downloadable APK or an App Store release. Browser/device support and installation menus vary; see [the web.dev installation guide](https://web.dev/learn/pwa/installation).
+
+Catalog browsing and playback require internet. The service worker caches only the offline explanation page and its small icon; it never caches library credentials, API responses, video ranges, or manga images. Navigation uses the network first so the app gets the latest interface. Profiles remain in device-local storage; some installation environments use separate storage, so export/import is still available to transfer your library. Local Node/Electron instances do not register this hosted-app worker.
+
+Web/CLI v0.4.1 includes mobile installation. The downloadable Windows binaries remain v0.4.0.
+
 ## Run
 
 Requires Node.js 22 or newer.
@@ -101,7 +114,7 @@ npm test
 npm run web
 ```
 
-There are 29 automated tests covering parsing, provider links, byte ranges, errors, local profile isolation, invalid passwords, import validation, frontend syntax, MAL scores/rankings, season matching, personal-score and favorite persistence, desktop navigation restrictions, and reader-cache reuse, concurrency, cancellation and retry. Tests use synthetic fixtures and do not download episodes.
+There are 31 automated tests covering parsing, provider links, byte ranges, errors, local profile isolation, invalid passwords, import validation, frontend syntax, MAL scores/rankings, season matching, personal-score and favorite persistence, desktop navigation restrictions, mobile asset validation, service-worker cache boundaries, and reader-cache reuse, concurrency, cancellation and retry. Tests use synthetic fixtures and do not download episodes.
 
 Build the desktop app on Windows:
 

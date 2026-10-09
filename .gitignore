@@ -14,3 +14,5 @@ sample-*.json
 sample-*.yaml
 
 dist-desktop/
+
+!public/pwa-icons/*.png

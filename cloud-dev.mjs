@@ -1,11 +1,13 @@
+import { pwaAsset } from './pwa-assets.mjs';
 import { createServer } from 'node:http';
 import handler from './api/index.mjs';
 createServer((req,res)=>{
  const url=new URL(req.url,'http://127.0.0.1:5190');let route,action='',path='',id='',page='',file='';
- if(url.pathname==='/')route='home';
+ if(pwaAsset(url.pathname))route='pwa';
+ else if(url.pathname==='/')route='home';
  else if(url.pathname==='/reproductor')route='manual';
  else if(url.pathname==='/license')route='license';
- else if(['/ratings-ui.mjs','/previews.mjs','/reader-cache.mjs','/experience.mjs'].includes(url.pathname))route=url.pathname.slice(1,-4);
+ else if(['/ratings-ui.mjs','/previews.mjs','/reader-cache.mjs','/experience.mjs','/pwa-ui.mjs'].includes(url.pathname))route=url.pathname.slice(1,-4);
  else if(url.pathname==='/manga-ui.mjs')route='manga-ui';
  else if(url.pathname==='/profiles.mjs')route='profiles';
  else if(url.pathname.startsWith('/manga-cover/')){route='manga-cover';[, ,id,file]=url.pathname.split('/');}

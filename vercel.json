@@ -3,7 +3,7 @@
   "functions": {
     "api/index.mjs": {
       "maxDuration": 60,
-      "includeFiles": "{catalog.html,web.html,profiles.mjs,manga-ui.mjs,ratings-ui.mjs,previews.mjs,reader-cache.mjs,LICENSE,experience.mjs}"
+      "includeFiles": "{catalog.html,web.html,profiles.mjs,manga-ui.mjs,ratings-ui.mjs,previews.mjs,reader-cache.mjs,LICENSE,experience.mjs,pwa-ui.mjs,public/**}"
     }
   },
   "rewrites": [
@@ -14,6 +14,26 @@
     {
       "source": "/reproductor",
       "destination": "/api/index?route=manual"
+    },
+    {
+      "source": "/pwa-ui.mjs",
+      "destination": "/api/index?route=pwa-ui"
+    },
+    {
+      "source": "/sw.js",
+      "destination": "/api/index?route=pwa&asset=/sw.js"
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "destination": "/api/index?route=pwa&asset=/manifest.webmanifest"
+    },
+    {
+      "source": "/offline.html",
+      "destination": "/api/index?route=pwa&asset=/offline.html"
+    },
+    {
+      "source": "/pwa-icons/:file",
+      "destination": "/api/index?route=pwa&asset=/pwa-icons/:file"
     },
     {
       "source": "/experience.mjs",
@@ -68,5 +88,37 @@
       "destination": "/api/index?route=api&action=:action*"
     }
   ],
-  "framework": null
+  "framework": null,
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        },
+        {
+          "key": "Content-Type",
+          "value": "text/javascript; charset=utf-8"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        }
+      ]
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
+  ]
 }

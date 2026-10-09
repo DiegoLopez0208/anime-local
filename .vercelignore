@@ -10,3 +10,5 @@ cloud-dev.mjs
 
 desktop/
 dist-desktop/
+
+!public/pwa-icons/*.png

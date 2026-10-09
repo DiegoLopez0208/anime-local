@@ -1,6 +1,6 @@
 {
   "name": "@diegolopez02081/anime-local",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Anime and manga library for web and Windows, with favorites, ratings and direct playback.",
   "type": "module",
   "license": "MIT",
@@ -43,7 +43,10 @@
     "previews.mjs",
     "reader-cache.mjs",
     "experience.mjs",
-    "desktop/"
+    "desktop/",
+    "pwa-ui.mjs",
+    "pwa-assets.mjs",
+    "public/"
   ],
   "repository": {
     "type": "git",
@@ -85,7 +88,8 @@
       "package.json",
       "!*.test.mjs",
       "!cloud-dev.mjs",
-      "!smoke.mjs"
+      "!smoke.mjs",
+      "public/**"
     ],
     "asar": true,
     "win": {

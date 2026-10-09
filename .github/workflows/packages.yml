@@ -1,0 +1,49 @@
+name: Publish GitHub Package
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: github-package-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.event_name != 'release' || !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          registry-url: https://npm.pkg.github.com
+          scope: '@diegolopez0208'
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - name: Prepare owner-scoped mirror
+        run: node .github/scripts/github-package.mjs
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+      - name: Publish mirror if version is missing
+        shell: bash
+        run: |
+          package_name=$(node -p "require('./package.json').name")
+          package_version=$(node -p "require('./package.json').version")
+          if npm view "$package_name@$package_version" version --registry=https://npm.pkg.github.com >/dev/null 2>&1; then
+            echo "$package_name@$package_version is already published."
+          else
+            npm publish --registry=https://npm.pkg.github.com --access=public --ignore-scripts
+          fi
+          npm view "$package_name@$package_version" version dist.shasum --registry=https://npm.pkg.github.com --json
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify repository association
+        shell: bash
+        run: |
+          gh api "users/$GITHUB_REPOSITORY_OWNER/packages/npm/anime-local" \
+            --jq '{name, visibility, repository: .repository.full_name, html_url}'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

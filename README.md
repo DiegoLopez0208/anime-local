@@ -27,7 +27,7 @@ This is an installable web app (PWA), with an icon and standalone display mode. 
 
 Catalog browsing and playback require internet. The service worker caches only the offline explanation page and its small icon; it never caches library credentials, API responses, video ranges, or manga images. Navigation uses the network first so the app gets the latest interface. Profiles remain in device-local storage; some installation environments use separate storage, so export/import is still available to transfer your library. Local Node/Electron instances do not register this hosted-app worker.
 
-Web/CLI v0.4.2 includes the visible installation entry and custom SVG, PNG and ICO favicons, with matching mobile icons. The downloadable Windows binaries remain v0.4.0.
+Web, CLI and Windows downloads are aligned at v0.4.3, including the visible installation entry and custom SVG, PNG and ICO favicons, with matching app icons.
 
 ## Run
 
@@ -47,6 +47,14 @@ npx @diegolopez02081/anime-local --cli "https://tioanime.com/ver/YOUR-EPISODE" -
 ```
 
 VLC must be installed in its standard Windows location, or set `VLC_PATH` to the VLC executable. Keep the process running while playing MEGA: it provides a local decryption bridge.
+
+## Package registries
+
+The primary package on npm.org remains `@diegolopez02081/anime-local`, for the `npx` command above. GitHub Packages hosts an owner-scoped mirror, `@diegolopez0208/anime-local`, linked to this repository. The scopes differ because each registry uses its own account namespace.
+
+The **Publish GitHub Package** workflow runs on published releases or manual dispatch. It tests the source, prepares the mirror only inside the runner checkout, publishes missing versions, and verifies the package version and repository association. It uses the repository token with package write permissions; no package token is stored in the source tree.
+
+Installing from GitHub Packages requires registry authentication and an `@diegolopez0208:registry=https://npm.pkg.github.com` scope mapping. For installation without GitHub registry setup, use the npm.org package. See [GitHub registry documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry).
 
 ## Features
 

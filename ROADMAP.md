@@ -1,6 +1,6 @@
 # Product roadmap
 
-The items below are proposals, not implemented features. Web/CLI is v0.4.2, with mobile web installation; the downloadable Windows app is v0.4.0.
+The items below are proposals, not implemented features. Web, CLI and downloadable Windows app are aligned at v0.4.3.
 
 ## 1. One library across devices
 

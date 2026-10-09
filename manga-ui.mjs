@@ -1,12 +1,13 @@
-import { createReaderCache } from '/reader-cache.mjs?v=0.3.2';
-let readerObserver, loaderObserver, readerCache;
+import { enhanceReader } from '/experience.mjs?v=0.4.0';
+import { createReaderCache } from '/reader-cache.mjs?v=0.4.0';
+let readerObserver, loaderObserver, readerCache, readerExperience;
 function clearImages() {
  readerObserver?.disconnect(); loaderObserver?.disconnect();
- readerCache?.close();readerCache=null;
+ readerCache?.close();readerCache=null;readerExperience?.close();readerExperience=null;
 }
 export async function renderManga(ctx) {
  clearImages();
- const {url,root,api,esc,grid,image,profiles,statusOptions,active,mountRatings}=ctx;
+ const {url,root,api,esc,grid,image,profiles,statusOptions,active,mountRatings,mountFavorite}=ctx;
  const path=url.pathname, id=path.split('/')[2], language=url.searchParams.get('idioma')==='en'?'en':'es', offset=Number(url.searchParams.get('offset'))||0;
  const params=(data)=>{const p=new URLSearchParams(data);return p.size?'?'+p:'';};
  const languages='<option value="es">Español y latino</option><option value="en">English</option>';
@@ -24,7 +25,7 @@ export async function renderManga(ctx) {
   document.title=data.title+' · Anime local';
   const saved=profiles.current().library[data.path];
   root.innerHTML='<div class="crumb"><a href="#/mangas">Lecturas</a> / '+esc(data.type)+'</div><section class="detail">'+image(data.image,data.title,'class="poster"')+'<div><div class="eyebrow">'+esc(data.type)+' · Lecturas</div><h1>'+esc(data.title)+'</h1><div class="chips">'+data.tags.slice(0,12).map(t=>'<span class="chip">'+esc(t)+'</span>').join('')+'</div><div class="listselect"><label for="readingstatus">Mi lista</label><select id="readingstatus"><option value="">Añadir a mi lista</option>'+statusOptions(saved?.status)+'</select></div></div><p class="synopsis">'+esc(data.synopsis||'Sin sinopsis disponible.')+'</p></section><div class="sectionhead"><h2>Capítulos</h2><select id="chapterlanguage" aria-label="Idioma de capítulos">'+languages+'</select></div><p class="sub">'+data.total+' versiones de capítulos. Puede haber varias traducciones del mismo capítulo.</p><div class="episodelist">'+data.chapters.map(ch=>ch.externalUrl?'<div class="episodeitem">Capítulo '+esc(ch.number||'Especial')+'<small>Lectura no disponible aquí</small></div>':'<a class="episodeitem" href="#'+esc(ch.path+params({idioma:language,offset}))+'">Capítulo '+esc(ch.number||'Especial')+'<small>'+esc(ch.title||ch.pages+' páginas')+' · '+(ch.language==='en'?'Inglés':ch.language==='es-la'?'Español latino':'Español')+'</small></a>').join('')+'</div>'+(data.chapters.length?'':'<div class="notice">'+(data.alternatives.length?'No hay capítulos disponibles en este idioma. '+data.alternatives.map(a=>'<a class="button secondary" href="#'+esc(data.path+params({idioma:a.language}))+'">Ver '+a.total+' capítulos en '+(a.language==='en'?'inglés':'español')+'</a>').join(' '):'Esta obra no tiene capítulos disponibles en español ni inglés. <a class="button secondary" href="#/mangas">Explorar lecturas</a>')+'</div>')+paginate('#'+data.path,data);
-  mountRatings({element:root.querySelector('.detail>div'),item:data,kind:'manga',api,esc,profiles,active});
+  mountRatings({element:root.querySelector('.detail>div'),item:data,kind:'manga',api,esc,profiles,active});mountFavorite({element:root.querySelector('.detail>div'),item:data,profiles});
   root.querySelector('#readingstatus').value=saved?.status||'';
   root.querySelector('#readingstatus').onchange=e=>{if(e.target.value)profiles.setAnime(data,e.target.value);else profiles.removeAnime(data.path);};
   root.querySelector('#chapterlanguage').value=data.language;root.querySelector('#chapterlanguage').onchange=e=>location.hash='#'+data.path+params({idioma:e.target.value});
@@ -38,7 +39,7 @@ export async function renderManga(ctx) {
   const chapterLink=ch=>'#'+ch.path+params({idioma:lang,offset});
   const prior=profiles.current().library[data.manga.path];
   profiles.setAnime(data.manga,prior&&prior.status!=='planned'?prior.status:'watching',{lastEpisode:data.id?'/leer/'+data.id:null,lastWatchedAt:Date.now()});
-  let page=Math.max(0,Math.min(data.pages.length-1,Math.floor(profiles.current().progress[path]?.time||0))),mode='five',readingPage=page;
+  let page=Math.max(0,Math.min(data.pages.length-1,Math.floor(profiles.current().progress[path]?.time||0))),mode=['five','page','vertical'].includes(localStorage.getItem('anime-local-reader-mode'))?localStorage.getItem('anime-local-reader-mode'):'five',readingPage=page;
   document.title=data.manga.title+' · Capítulo '+data.number;
   root.innerHTML='<div class="crumb"><a href="#'+esc(data.manga.path+params({idioma:lang,offset}))+'">'+esc(data.manga.title)+'</a> / Capítulo '+esc(data.number||'Especial')+'</div><div class="sectionhead"><h1>Capítulo '+esc(data.number||'Especial')+'</h1><select id="readmode" aria-label="Modo de lectura"><option value="five">5 páginas seguidas</option><option value="page">Página por página</option><option value="vertical">Lectura vertical</option></select></div><div class="readercontrols"><button id="pageprevious" class="secondary">← Página</button><select id="readpage" aria-label="Página del capítulo">'+data.pages.map((_,i)=>'<option value="'+i+'">Página '+(i+1)+' / '+data.pages.length+'</option>').join('')+'</select><button id="pagenext" class="secondary">Página →</button></div><p id="readstatus" role="status" class="sub">Cargando página…</p><div id="reader" class="reader"></div><div class="watchbar">'+(index>0?'<a class="button secondary" href="'+esc(chapterLink(list[index-1]))+'">← Capítulo anterior</a>':'')+'<a class="button secondary" href="#'+esc(data.manga.path+params({idioma:lang,offset}))+'">Lista de capítulos</a>'+(index>=0&&index<list.length-1?'<a class="button" href="'+esc(chapterLink(list[index+1]))+'">Siguiente capítulo →</a>':'')+'</div>';
   const reader=root.querySelector('#reader'), select=root.querySelector('#readpage'), status=root.querySelector('#readstatus');
@@ -81,7 +82,7 @@ export async function renderManga(ctx) {
     if(!active())return;
     const visible=entries.filter(x=>x.isIntersecting).sort((a,b)=>Math.abs(a.boundingClientRect.top)-Math.abs(b.boundingClientRect.top));
     if(visible[0]){
-     readingPage=Number(visible[0].target.dataset.page);profiles.saveProgress(path,readingPage);
+     readingPage=Number(visible[0].target.dataset.page);readerExperience?.update(readingPage);profiles.saveProgress(path,readingPage);
      if(mode==='vertical'){page=readingPage;select.value=page;previous.disabled=page===0;next.disabled=page>=data.pages.length-1;}
     }
    },{rootMargin:'0px 0px -70% 0px',threshold:0});
@@ -98,13 +99,14 @@ export async function renderManga(ctx) {
   };
   const change=n=>{
    page=Math.max(0,Math.min(data.pages.length-1,n));readingPage=page;
-   profiles.saveProgress(path,page);
+   profiles.saveProgress(path,page);readerExperience?.update(page);
    if(mode==='vertical')mode='five';
    root.querySelector('#readmode').value=mode;draw();
   };
   root.querySelector('#pageprevious').onclick=()=>change(page-(mode==='five'?5:1));
   root.querySelector('#pagenext').onclick=()=>change(page+(mode==='five'?5:1));select.onchange=()=>change(Number(select.value));
-  root.querySelector('#readmode').onchange=e=>{mode=e.target.value;page=readingPage;draw();};
+  root.querySelector('#readmode').onchange=e=>{mode=e.target.value;localStorage.setItem('anime-local-reader-mode',mode);page=readingPage;draw();};
+  readerExperience=enhanceReader({root,total:data.pages.length,page,onNavigate:direction=>{const button=root.querySelector(direction>0?'#pagenext':'#pageprevious');if(!button.disabled)button.click();}});readerExperience.update(page);root.querySelector('#readmode').value=mode;
   draw();return true;
  }
  return false;

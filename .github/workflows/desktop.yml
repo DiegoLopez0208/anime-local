@@ -1,0 +1,25 @@
+name: Windows desktop build
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node node_modules/electron/install.js
+      - run: npm test
+      - run: npm run desktop:smoke
+      - run: npm run desktop:build
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: anime-local-windows
+          path: |
+            dist-desktop/Anime-Local-Windows-Setup.exe
+            dist-desktop/Anime-Local-Windows-x64.zip

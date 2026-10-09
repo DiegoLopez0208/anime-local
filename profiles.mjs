@@ -43,6 +43,11 @@ export class Profiles {
   this.persist(); return library[anime.path];
  }
  removeAnime(path) { delete this.current().library[path]; this.persist(); }
+ setFavorite(item, favorite) {
+  if(typeof favorite!=='boolean')throw Error('Favorito no válido.');
+  const previous=this.current().library[item.path];if(!previous&&!favorite)return;
+  return this.setAnime(item,previous?.status||'planned',{favorite});
+ }
  setRating(item, rating) {
   if (rating !== null && (!Number.isInteger(rating) || rating < 1 || rating > 10)) throw Error('La nota debe estar entre 1 y 10.');
   const previous = this.current().library[item.path];
@@ -65,6 +70,7 @@ export class Profiles {
    if (!row || !validAnime.test(row.path) || !STATUSES[row.status] || typeof row.title !== 'string') throw Error('Anime no válido en el archivo.');
    library[row.path] = { path: row.path, title: row.title.slice(0, 300), image: /^(?:\/image\/uploads\/portadas\/[\w-]+\.(?:jpg|jpeg|png|webp)|(?:https:\/\/uploads\.mangadex\.org\/covers\/|\/manga-cover\/)[a-f0-9-]{36}\/[\w.-]+)$/i.test(row.image || '') ? row.image : null, status: row.status, updated: Date.now() };
    if (validEpisode.test(row.lastEpisode || '')) library[row.path].lastEpisode = row.lastEpisode;
+   if(row.favorite!==undefined){if(typeof row.favorite!=='boolean')throw Error('Favorito no válido en el archivo.');library[row.path].favorite=row.favorite;}
    if (row.rating !== undefined && row.rating !== null) {
     if (!Number.isInteger(row.rating) || row.rating < 1 || row.rating > 10) throw Error('Nota no válida en el archivo.');
     library[row.path].rating = row.rating;

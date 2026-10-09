@@ -4,7 +4,17 @@
 
 [Open the hosted app](https://anime-local-nine.vercel.app).
 
-A small local anime and manga catalog with watch lists, browser profiles, and direct YourUpload/MEGA playback. The interface is in Spanish.
+A local anime and manga catalog with personal libraries, browser profiles, and direct YourUpload/MEGA playback. Available on the web, as a Node.js CLI, and as a downloadable Windows app. The interface is in Spanish.
+
+## Windows app
+
+[Download the installer](https://github.com/DiegoLopez0208/anime-local/releases/latest/download/Anime-Local-Windows-Setup.exe) or [download the portable ZIP](https://github.com/DiegoLopez0208/anime-local/releases/latest/download/Anime-Local-Windows-x64.zip). For the portable version, extract the entire ZIP and open `Anime Local.exe`.
+
+Windows x64. Node.js is bundled; no separate installation is needed. Catalog browsing and playback still require internet. The binaries are not digitally signed. SHA-256 checksums are provided with each release.
+
+The desktop app stores its own profiles and library. Export your list from the web and import it in the app through **Mi lista**. Automatic synchronization and automatic updates are not implemented.
+
+The desktop window uses Electron with context isolation, sandboxing, and Node integration disabled. Its bundled server listens on loopback port 5198. External navigation is restricted to canonical MyAnimeList entries and this project's release pages. Opening another instance focuses the existing window; closing the app stops its server.
 
 ## Run
 
@@ -27,6 +37,12 @@ VLC must be installed in its standard Windows location, or set `VLC_PATH` to the
 
 ## Features
 
+- Sidebar navigation on desktop and bottom navigation on mobile, with a shared anime/reading search and a keyboard shortcut (`/`) to focus it.
+- Library search, favorites, status/type filters, personal-score ordering, and summaries of ongoing, favorite, and completed works.
+- Saved preferences for compact/comfortable cards, reader width, and reading mode.
+- Sticky reader controls, page progress, focus mode, arrow-key navigation, and Escape to leave focus mode.
+- Loading placeholders and a retry action when a route cannot load.
+- A desktop download page at `#/app`, also accessible from settings on mobile.
 - Recent episodes, recent anime, search, genres, status filters, and paginated catalog.
 - Series pages with synopsis, cover, genres, and ordered episodes.
 - Browser playback, provider switching, previous/next episodes, and local VLC launching.
@@ -85,7 +101,23 @@ npm test
 npm run web
 ```
 
-There are 27 automated tests covering parsing, provider links, byte ranges, errors, local profile isolation, invalid passwords, import validation, frontend syntax, MAL scores/rankings, season matching, personal-score persistence, and reader-cache reuse, concurrency, cancellation and retry. Tests use synthetic fixtures and do not download episodes.
+There are 29 automated tests covering parsing, provider links, byte ranges, errors, local profile isolation, invalid passwords, import validation, frontend syntax, MAL scores/rankings, season matching, personal-score and favorite persistence, desktop navigation restrictions, and reader-cache reuse, concurrency, cancellation and retry. Tests use synthetic fixtures and do not download episodes.
+
+Build the desktop app on Windows:
+
+```sh
+npm ci
+node node_modules/electron/install.js
+npm run desktop
+npm run desktop:smoke
+npm run desktop:build
+```
+
+The build outputs an NSIS installer and a portable ZIP in `dist-desktop/`. The smoke check opens an isolated, hidden desktop window, verifies the library and license route, checks renderer isolation, and exits. It also works on a packaged executable with `--smoke`. The optional `ANIME_LOCAL_SMOKE_REPORT` environment variable selects a JSON report path.
+
+Production dependencies have a clean audit at v0.4.0. The current development-only Electron download/build dependency chain has moderate `sprintf-js` advisories; no patched upstream version was available at release time. Development build tools are excluded from the desktop bundle.
+
+See [the roadmap](ROADMAP.md) for planned improvements and their boundaries.
 
 Optional live checks against an episode of your choice:
 
@@ -101,4 +133,4 @@ Source files: `catalog.mjs` (scraper), `catalog.html` (UI), `profiles.mjs` (brow
 
 The code is licensed under the [MIT License](LICENSE), copyright 2026 Diego Lopez. The hosted app also exposes the license at [/license](https://anime-local-nine.vercel.app/license). Third-party names and media remain their respective owners' property. No video files or cover images are distributed in the package.
 
-Ratings modules: ratings.mjs / ratings-ui.mjs (community and personal scores), previews.mjs (hover preview lifecycle).
+Ratings modules: ratings.mjs / ratings-ui.mjs (community and personal scores), previews.mjs (hover preview lifecycle). Experience modules: experience.mjs (preferences, favorites, reader controls, desktop download page), desktop/main.cjs (native app lifecycle), desktop/policy.cjs (external navigation policy).

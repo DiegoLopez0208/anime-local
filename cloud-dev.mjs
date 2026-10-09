@@ -5,7 +5,7 @@ createServer((req,res)=>{
  if(url.pathname==='/')route='home';
  else if(url.pathname==='/reproductor')route='manual';
  else if(url.pathname==='/license')route='license';
- else if(['/ratings-ui.mjs','/previews.mjs','/reader-cache.mjs'].includes(url.pathname))route=url.pathname.slice(1,-4);
+ else if(['/ratings-ui.mjs','/previews.mjs','/reader-cache.mjs','/experience.mjs'].includes(url.pathname))route=url.pathname.slice(1,-4);
  else if(url.pathname==='/manga-ui.mjs')route='manga-ui';
  else if(url.pathname==='/profiles.mjs')route='profiles';
  else if(url.pathname.startsWith('/manga-cover/')){route='manga-cover';[, ,id,file]=url.pathname.split('/');}

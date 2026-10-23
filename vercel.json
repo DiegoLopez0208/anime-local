@@ -3,7 +3,7 @@
   "functions": {
     "api/index.mjs": {
       "maxDuration": 60,
-      "includeFiles": "{catalog.html,web.html,profiles.mjs,manga-ui.mjs,ratings-ui.mjs,previews.mjs,reader-cache.mjs,LICENSE,experience.mjs,pwa-ui.mjs,public/**}"
+      "includeFiles": "{catalog.html,web.html,profiles.mjs,manga-ui.mjs,ratings-ui.mjs,previews.mjs,reader-cache.mjs,LICENSE,experience.mjs,pwa-ui.mjs,player-ui.mjs,public/**}"
     }
   },
   "rewrites": [
@@ -46,6 +46,10 @@
     {
       "source": "/pwa-icons/:file",
       "destination": "/api/index?route=pwa&asset=/pwa-icons/:file"
+    },
+    {
+      "source": "/player-ui.mjs",
+      "destination": "/api/index?route=player-ui"
     },
     {
       "source": "/experience.mjs",

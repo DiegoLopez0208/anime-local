@@ -1,5 +1,7 @@
 import { load } from 'cheerio';
 import { getText, parseEpisode } from './lib.mjs';
+import { classifyAll } from './providers.mjs';
+import { servers as av1Servers } from './animeav1.mjs';
 
 const base = 'https://tioanime.com';
 const cache = new Map(), pending = new Map();
@@ -125,5 +127,15 @@ export async function anime(input) {
 }
 export async function episode(input) {
   const path = sourcePath(input, '/ver/');
-  return parseEpisodePage(await cachedText(path, 60000), path);
+  const page = parseEpisodePage(await cachedText(path, 60000), path);
+  const match = /^\/ver\/(.+)-(\d+)$/.exec(path);
+  if (!match) return page;
+  page.number = Number(match[2]);
+  try {
+    page.animeTitle = (await anime('/anime/' + match[1])).title;
+    // Los proveedores extra son opcionales: si fallan o tardan, el episodio sigue con los de TioAnime.
+    const extra = await Promise.race([av1Servers(page.animeTitle, match[2]), new Promise(resolve => setTimeout(resolve, 8000, []))]);
+    page.servers = classifyAll([...page.servers, ...extra]);
+  } catch {}
+  return page;
 }

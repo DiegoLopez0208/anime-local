@@ -5,7 +5,9 @@ import { inspect } from '../sources.mjs';
 import { readFile } from 'node:fs/promises';
 import { Buffer } from 'node:buffer';
 import * as catalog from '../catalog.mjs';
-import { resolveYourUpload, resolveMega, parseRange, megaStream, withTimeout } from '../lib.mjs';
+import { resolveYourUpload, resolveMp4Upload, resolveMega, parseRange, megaStream, withTimeout } from '../lib.mjs';
+import { skipTimes } from '../skip.mjs';
+const isMp4Upload = value => new URL(value).hostname.endsWith('mp4upload.com');
 const MAX = 4 * 1024 * 1024;
 const files = new Map();
 const send = (res, status, value) => { res.statusCode = status; res.setHeader('Content-Type','application/json; charset=utf-8'); res.setHeader('Cache-Control','no-store'); res.end(JSON.stringify(value)); };
@@ -13,6 +15,7 @@ function validateSource(value) {
  const url = new URL(value);
  if (url.protocol !== 'https:' || url.username || url.password) throw Error('Fuente no válida.');
  if (['www.yourupload.com','yourupload.com'].includes(url.hostname) && /^\/embed\/[a-zA-Z0-9]+$/.test(url.pathname)) return url.href;
+ if (['www.mp4upload.com','mp4upload.com'].includes(url.hostname) && /^\/embed-[a-z0-9]+\.html$/.test(url.pathname)) return url.href;
  if (url.hostname === 'mega.nz' && (/^\/embed\/![\w-]+![\w-]+$/.test(url.pathname) || /^\/file\/[\w-]+$/.test(url.pathname) && /^#[\w-]+$/.test(url.hash))) return url.href;
  throw Error('Servidor no compatible.');
 }
@@ -33,7 +36,7 @@ async function media(req,res,source,preview=false) {
  if(preview&&new URL(url).hostname==='mega.nz')throw Error('Las vistas previas usan YourUpload.');
  if(new URL(url).hostname==='mega.nz'){file=await sourceFile(url);size=file.size;}
  else{
-  video=await resolveYourUpload(url);
+  video=isMp4Upload(url)?await resolveMp4Upload(url):await resolveYourUpload(url);
   const info=await fetch(video.url,{headers:{Referer:video.referrer,Range:'bytes=0-0'},signal:AbortSignal.timeout(20000)});
   const contentRange=info.headers.get('content-range');size=Number(contentRange?.split('/')[1]);await info.body?.cancel();
   if(!info.ok||!Number.isSafeInteger(size)||size<=0)throw Error('El proveedor no informó el tamaño del MP4.');
@@ -63,12 +66,12 @@ export default async function handler(req,res) {
   if(route==='license'){
    res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','X-Content-Type-Options':'nosniff','Cache-Control':'public, max-age=3600'}).end(await readFile(new URL('../LICENSE',import.meta.url),'utf8'));return;
   }
-  if(['home','manual','profiles','manga-ui','ratings-ui','previews','reader-cache','experience','pwa-ui'].includes(route)){
-   const filename=['ratings-ui','previews','reader-cache','experience','pwa-ui'].includes(route)?route+'.mjs':route==='manga-ui'?'manga-ui.mjs':route==='profiles'?'profiles.mjs':route==='manual'?'web.html':'catalog.html';
+  if(['home','manual','profiles','manga-ui','ratings-ui','previews','reader-cache','experience','pwa-ui','player-ui'].includes(route)){
+   const filename=['ratings-ui','previews','reader-cache','experience','pwa-ui','player-ui'].includes(route)?route+'.mjs':route==='manga-ui'?'manga-ui.mjs':route==='profiles'?'profiles.mjs':route==='manual'?'web.html':'catalog.html';
    const html=(await readFile(new URL('../'+filename,import.meta.url),'utf8')).replaceAll('__API_TOKEN__','cloud');
-   res.setHeader('Content-Type',['profiles','manga-ui','ratings-ui','previews','reader-cache','experience','pwa-ui'].includes(route)?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
+   res.setHeader('Content-Type',['profiles','manga-ui','ratings-ui','previews','reader-cache','experience','pwa-ui','player-ui'].includes(route)?'text/javascript; charset=utf-8':'text/html; charset=utf-8');
    res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('X-Frame-Options','DENY');
-   if(!['profiles','manga-ui','ratings-ui','previews','reader-cache','experience','pwa-ui'].includes(route))res.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; manifest-src 'self'; worker-src 'self'; media-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
+   if(!['profiles','manga-ui','ratings-ui','previews','reader-cache','experience','pwa-ui','player-ui'].includes(route))res.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src https:; media-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'");
    res.end(html);return;
   }
   if(route==='image'){
@@ -105,6 +108,7 @@ export default async function handler(req,res) {
   if(action==='catalog/anime'){send(res,200,await catalog.anime(input.path));return;}
   if(action==='catalog/episode'){send(res,200,await catalog.episode(input.path));return;}
   if(action==='episode'){send(res,200,await inspect(input.url));return;}
+  if(action==='skip'){send(res,200,await skipTimes(input));return;}
   if(action==='ratings/lookup'){send(res,200,await ratings.lookup(input));return;}
   if(action==='ratings/detail'){send(res,200,await ratings.detail(input));return;}
   if(action==='ratings/ranking'){send(res,200,await ratings.ranking(input));return;}
@@ -114,7 +118,7 @@ export default async function handler(req,res) {
   if(action==='play'){
    const source=validateSource(input.url);const id=Buffer.from(source).toString('base64url');
    if(input.preview&&new URL(source).hostname==='mega.nz')throw Error('Las vistas previas usan YourUpload.');
-   const name=new URL(source).hostname==='mega.nz'?(await sourceFile(source)).name:'YourUpload';
+   const name=new URL(source).hostname==='mega.nz'?(await sourceFile(source)).name:isMp4Upload(source)?'MP4Upload':'YourUpload';
    send(res,200,{id,name,src:(input.preview?'/preview-video/':'/video/')+id});return;
   }
   if(action==='close'){send(res,200,{ok:true});return;}

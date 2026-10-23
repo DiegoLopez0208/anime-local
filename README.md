@@ -27,7 +27,15 @@ This is an installable web app (PWA), with an icon and standalone display mode. 
 
 Catalog browsing and playback require internet. The service worker caches only the offline explanation page and its small icon; it never caches library credentials, API responses, video ranges, or manga images. Navigation uses the network first so the app gets the latest interface. Profiles remain in device-local storage; some installation environments use separate storage, so export/import is still available to transfer your library. Local Node/Electron instances do not register this hosted-app worker.
 
-Web, CLI and Windows downloads are aligned at v0.4.3, including the visible installation entry and custom SVG, PNG and ICO favicons, with matching app icons.
+The web app and CLI are at v0.5.0. The Windows downloads stay at v0.4.3 until a desktop release is published.
+
+## Player (v0.5.0)
+
+- **More providers.** Each episode merges the servers from TioAnime and AnimeAV1. YourUpload, MP4Upload and MEGA play as a plain video file with no third-party player, so they carry no ads. Voe, Okru, Netu, Byse, UPNShare and AnimeAV1's own player open in the provider's embedded player (marked with ▢); those can show ads and cannot be controlled by the app. Popups from an embedded player are blocked by its sandbox. If a direct server fails, the next one is tried automatically, and the last server used is remembered.
+- **Skip intro and opening.** Skip times come from [AniSkip](https://api.aniskip.com) using the MyAnimeList entry that matches the title. The player shows *Saltar intro*, *Saltar opening* and *Saltar ending* at the right moment, and *+85 s* is always available as a fallback. *Saltar opening solo* can be turned on in the player settings.
+- **Next episode.** A *Siguiente capítulo* button appears during the ending, and when the episode finishes a cancelable 8-second countdown moves on to the next one.
+- **Mobile.** Full-bleed player, large touch targets, double-tap to seek ±10 s, a sticky previous/next bar and a horizontally scrollable server row. The fullscreen button uses an in-page fullscreen instead of the browser Fullscreen API, which avoids the browser notice that shows the site address. Back exits fullscreen without leaving the episode, and fullscreen carries over to the next episode.
+- **Not included.** AnimeFLV could not be reached from the development network and JKAnime answers HTTP 403 to non-browser clients, so neither was added as a source.
 
 ## Run
 

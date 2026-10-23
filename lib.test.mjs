@@ -4,7 +4,8 @@ import { Readable } from 'node:stream';
 import { parseEpisode, normalizeMega, parseRange, createMegaBridge } from './lib.mjs';
 test('extrae los proveedores compatibles sin ejecutar JavaScript', () => {
   const html = 'var videos = [["Mega","https://mega.nz/embed/!abc!key",0],["Voe","https://voe.sx/e/x"],["YourUpload","https://www.yourupload.com/embed/x"]];';
-  assert.deepEqual(parseEpisode(html).map(x => x.name), ['Mega', 'YourUpload']);
+  assert.deepEqual(parseEpisode(html).map(x => x.name), ['YourUpload', 'Mega', 'Voe']);
+  assert.deepEqual(parseEpisode(html).map(x => x.mode), ['direct', 'direct', 'embed']);
   assert.throws(() => parseEpisode('var videos = [alert(1)];'));
 });
 test('convierte MEGA embed conservando la clave', () => {

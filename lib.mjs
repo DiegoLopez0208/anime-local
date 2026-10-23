@@ -3,18 +3,15 @@ import { randomBytes } from 'node:crypto';
 import { Transform, Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { File } from 'megajs';
+import { classifyAll } from './providers.mjs';
 const nodeStreamApis = new WeakSet();
 
 export function parseEpisode(html) {
   const match = html.match(/\bvar\s+videos\s*=\s*(\[[^;]*\])\s*;/);
   if (!match) throw new Error('No se encontraron opciones de reproducción para este episodio.');
   const rows = JSON.parse(match[1]);
-  return rows.filter(row => Array.isArray(row) && typeof row[1] === 'string')
-    .map(([name, url]) => ({ name, url }))
-    .filter(({ url }) => {
-      try { return ['www.yourupload.com', 'yourupload.com', 'mega.nz'].includes(new URL(url).hostname); }
-      catch { return false; }
-    });
+  return classifyAll(rows.filter(row => Array.isArray(row) && typeof row[1] === 'string')
+    .map(([name, url]) => ({ name, url, source: 'TioAnime' })));
 }
 
 export function normalizeMega(url) {
@@ -59,6 +56,16 @@ export async function resolveYourUpload(url) {
   const match = html.match(/file:\s*['"](?<url>https:\/\/[^'"]+)['"]/);
   if (!match) throw new Error('No se encontro el MP4 en YourUpload.');
   return { url: match.groups.url.replaceAll('&amp;', '&'), referrer: url };
+}
+
+export async function resolveMp4Upload(url) {
+  const parsed = new URL(url);
+  if (parsed.protocol !== 'https:' || !['www.mp4upload.com', 'mp4upload.com'].includes(parsed.hostname) || !/^\/embed-[a-z0-9]+\.html$/.test(parsed.pathname))
+    throw new Error('Enlace MP4Upload no valido.');
+  const html = await getText(parsed.href);
+  const match = html.match(/src:\s*["'](?<url>https:\/\/[^"']+\.mp4)["']/);
+  if (!match) throw new Error('No se encontro el MP4 en MP4Upload.');
+  return { url: match.groups.url, referrer: 'https://www.mp4upload.com/' };
 }
 
 export async function withTimeout(promise, ms = 30000) {

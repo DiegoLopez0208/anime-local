@@ -7,7 +7,8 @@ import { readFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import { getText, parseEpisode, resolveYourUpload, resolveMega, createMegaBridge, parseRange } from './lib.mjs';
+import { getText, parseEpisode, resolveYourUpload, resolveMp4Upload, resolveMega, createMegaBridge, parseRange } from './lib.mjs';
+import { skipTimes } from './skip.mjs';
 import { openVlc } from './player.mjs';
 import * as catalog from './catalog.mjs';
 
@@ -39,14 +40,14 @@ const server = createServer(async (req, res) => {
     if (req.method === 'GET' && path === '/license') {
       res.writeHead(200, { 'Content-Type':'text/plain; charset=utf-8', 'X-Content-Type-Options':'nosniff', 'Cache-Control':'public, max-age=3600' }).end(await readFile(new URL('./LICENSE',import.meta.url),'utf8'));return;
     }
-    if (req.method === 'GET' && ['/profiles.mjs','/manga-ui.mjs','/ratings-ui.mjs','/previews.mjs','/reader-cache.mjs','/experience.mjs','/pwa-ui.mjs'].includes(path)) {
+    if (req.method === 'GET' && ['/player-ui.mjs','/profiles.mjs','/manga-ui.mjs','/ratings-ui.mjs','/previews.mjs','/reader-cache.mjs','/experience.mjs','/pwa-ui.mjs'].includes(path)) {
       res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }).end(await readFile(new URL('.'+path, import.meta.url), 'utf8')); return;
     }
     if (req.method === 'GET' && path === '/favicon.ico') { res.writeHead(204).end(); return; }
     if (req.method === 'GET' && ['/','/reproductor'].includes(path)) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store',
         'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer',
-        'Content-Security-Policy': "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; manifest-src 'self'; worker-src 'self'; media-src 'self' http://127.0.0.1:*; base-uri 'none'; frame-ancestors 'none'; form-action 'none'" }).end(path === '/reproductor' ? html : catalogHtml); return;
+        'Content-Security-Policy': "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob: https://uploads.mangadex.org https://*.mangadex.network; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src https:; media-src 'self' http://127.0.0.1:*; base-uri 'none'; frame-ancestors 'none'; form-action 'none'" }).end(path === '/reproductor' ? html : catalogHtml); return;
     }
     if (req.method === 'GET' && path.startsWith('/image/')) {
       const image = path.slice('/image'.length);
@@ -96,6 +97,7 @@ const server = createServer(async (req, res) => {
     if (path === '/api/catalog/directory') { json(res, 200, await catalog.directory(input)); return; }
     if (path === '/api/catalog/anime') { json(res, 200, await catalog.anime(input.path)); return; }
     if (path === '/api/catalog/episode') { json(res, 200, await catalog.episode(input.path)); return; }
+    if (path === '/api/skip') { json(res, 200, await skipTimes(input)); return; }
     if (path === '/api/episode') { json(res, 200, await inspect(input.url)); return; }
     if (path === '/api/ratings/lookup') {json(res,200,await ratings.lookup(input));return;}
     if (path === '/api/ratings/detail') {json(res,200,await ratings.detail(input));return;}
@@ -110,6 +112,8 @@ const server = createServer(async (req, res) => {
       if (url.hostname === 'mega.nz') {
         const file = await resolveMega(url.href);
         session = { bridge: await createMegaBridge(file), name: file.name };
+      } else if (url.hostname.endsWith('mp4upload.com')) {
+        session = { video: await resolveMp4Upload(url.href), name: 'MP4Upload' };
       } else {
         session = { video: await resolveYourUpload(url.href), name: 'YourUpload' };
       }

@@ -1,5 +1,6 @@
 import { load } from 'cheerio';
 import { getText, parseEpisode, normalizeMega } from './lib.mjs';
+import { classify } from './providers.mjs';
 
 export function sourceUrl(value) {
  const url = new URL(value);
@@ -15,8 +16,8 @@ export function parseJk(html) {
   try {
    const url = new URL(Buffer.from(row.remote, 'base64').toString('utf8').trim());
    if (url.protocol !== 'https:' || url.username || url.password) return null;
-   const compatible = ['mega.nz', 'yourupload.com', 'www.yourupload.com'].includes(url.hostname);
-   return { name: String(row.server), url: url.hostname === 'mega.nz' ? normalizeMega(url.href) : url.href, compatible };
+   const item = classify(String(row.server), url.hostname === 'mega.nz' ? normalizeMega(url.href) : url.href);
+   return { name: String(row.server), url: item?.url || url.href, mode: item?.mode, hls: item?.hls, compatible: !!item };
   } catch { return null; }
  }).filter(Boolean);
  return { title: load(html)('h1').first().text().trim(), available, servers: available.filter(row => row.compatible) };

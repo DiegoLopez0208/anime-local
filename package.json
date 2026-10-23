@@ -1,6 +1,6 @@
 {
   "name": "@diegolopez02081/anime-local",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Anime and manga library for web and Windows, with favorites, ratings and direct playback.",
   "type": "module",
   "license": "MIT",

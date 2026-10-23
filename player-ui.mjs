@@ -23,24 +23,26 @@ const CSS = `
 .vp-center{position:absolute;inset:0;margin:auto;width:68px;height:68px;border-radius:50%;background:#000a;color:#fff;font-size:26px;padding:0;z-index:3;border:1px solid #fff3;backdrop-filter:blur(6px)}
 .vp-toast{position:absolute;top:14%;left:50%;transform:translateX(-50%);background:#000b;color:#fff;padding:7px 14px;border-radius:20px;font-size:13px;z-index:6;pointer-events:none;opacity:0;transition:opacity .2s;white-space:nowrap}.vp-toast.on{opacity:1}
 .vp-top{position:absolute;top:0;right:0;left:0;display:flex;justify-content:flex-end;padding:calc(8px + env(safe-area-inset-top,0px)) calc(8px + env(safe-area-inset-right,0px)) 0 8px;background:linear-gradient(#000a,#0000);z-index:5;transition:opacity .2s}
-.vp-bar{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:6px;padding:26px calc(10px + env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) calc(10px + env(safe-area-inset-left,0px));background:linear-gradient(#0000,#000c);z-index:5;transition:opacity .2s}
-.vp button.vp-btn{background:transparent;color:#fff;border:0;padding:0;min-width:44px;height:44px;border-radius:10px;font-size:15px;display:inline-flex;align-items:center;justify-content:center}
-.vp button.vp-btn:active{background:#fff2}.vp-time{font-size:12px;color:#e8ece9;min-width:84px;text-align:center;font-variant-numeric:tabular-nums}
-.vp input[type=range]{flex:1;min-width:0;height:44px;padding:0;margin:0;background:transparent;accent-color:var(--accent,#f0cb78);border:0}
+.vp-bar{position:absolute;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:40px calc(18px + env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) calc(18px + env(safe-area-inset-left,0px));background:linear-gradient(#0000,#000d);z-index:5;transition:opacity .2s}
+.vp button.vp-btn{background:transparent;color:#fff;border:0;padding:0 6px;min-width:52px;height:52px;border-radius:12px;font-size:17px;display:inline-flex;align-items:center;justify-content:center}
+.vp button.vp-btn:active{background:#fff2}.vp-time{flex:1;font-size:14px;color:#e8ece9;text-align:left;padding-left:6px;font-variant-numeric:tabular-nums}
+.vp input[type=range]{order:-1;flex:1 0 100%;min-width:0;height:36px;padding:0;margin:0;background:transparent;accent-color:var(--accent,#f0cb78);border:0}
 .vp.idle .vp-bar,.vp.idle .vp-top{opacity:0;pointer-events:none}.vp.idle{cursor:none}
-.vp-actions{position:absolute;right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(76px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:flex-end;gap:8px;z-index:6}
-.vp.idle .vp-actions{bottom:calc(18px + env(safe-area-inset-bottom,0px))}
-.vp-actions button{background:#101315e8;color:#fff;border:1px solid #fff4;border-radius:10px;padding:0 16px;height:44px;font-size:14px;font-weight:650;backdrop-filter:blur(8px)}
+.vp-actions{position:absolute;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(120px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:flex-end;gap:12px;z-index:6}
+.vp.idle .vp-actions{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.vp-actions button{background:#101315ee;color:#fff;border:1px solid #fff4;border-radius:12px;padding:0 22px;height:50px;font-size:15px;font-weight:650;backdrop-filter:blur(8px)}
 .vp-actions button.primary{background:var(--accent,#f0cb78);color:#17201d;border-color:transparent}
-.vp-menu{position:absolute;right:calc(10px + env(safe-area-inset-right,0px));bottom:calc(72px + env(safe-area-inset-bottom,0px));background:#101315f4;border:1px solid #fff3;border-radius:12px;padding:6px 14px;z-index:7;min-width:230px}
-.vp-menu label{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;font-size:13px;color:#eef1ef;border-bottom:1px solid #fff1}.vp-menu label:last-child{border:0}.vp-menu input,.vp-menu select{accent-color:var(--accent,#f0cb78);width:auto}
+.vp-menu{position:absolute;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(124px + env(safe-area-inset-bottom,0px));background:#101315f4;border:1px solid #fff3;border-radius:14px;padding:8px 18px;z-index:7;min-width:280px;max-width:calc(100% - 36px)}
+.vp-menu label{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:16px 0;font-size:14px;color:#eef1ef;border-bottom:1px solid #fff1}.vp-menu select{font-size:14px;padding:8px 10px}.vp-menu input[type=checkbox]{width:22px;height:22px}.vp-menu label:last-child{border:0}.vp-menu input,.vp-menu select{accent-color:var(--accent,#f0cb78);width:auto}
 .vp.is-embed .vp-zone,.vp.is-embed .vp-center,.vp.is-embed .vp-bar,.vp.is-embed .vp-skip{display:none}.vp.is-embed .vp-top{position:absolute;pointer-events:none;background:none}.vp.is-embed .vp-top button{pointer-events:auto;background:#101315cc}.vp.is-embed .vp-actions{bottom:calc(14px + env(safe-area-inset-bottom,0px))}
 .vp.is-embed.idle .vp-top{opacity:1;pointer-events:none}
 .vp.fs{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;aspect-ratio:auto;z-index:1000;border-radius:0}
+main:fullscreen{max-width:none;margin:0;padding:0;background:#000;overflow:hidden}
 body.vp-lock{overflow:hidden;overscroll-behavior:none}body.vp-lock .app-sidebar,body.vp-lock header,body.vp-lock footer{visibility:hidden}
 .videoarea:has(.vp.fs){overflow:visible}
-@media(max-width:760px){.vp-time{min-width:74px;font-size:11px}.vp-bar{gap:2px}.vp button.vp-btn{min-width:40px}.vp-center{width:60px;height:60px}}
-@media(max-width:760px) and (orientation:landscape){.vp-zone{bottom:56px}}
+.vp-zone{bottom:120px}.vp-center{width:76px;height:76px;font-size:30px}.vp-top{padding-left:18px;padding-right:calc(18px + env(safe-area-inset-right,0px))}.vp-top .vp-btn{font-size:22px}
+@media(max-width:760px) and (orientation:portrait){.vp:not(.fs) .vp-bar{padding:30px 12px 8px;gap:0 6px}.vp:not(.fs) button.vp-btn{min-width:46px;height:46px}.vp:not(.fs) .vp-actions{bottom:calc(100px + env(safe-area-inset-bottom,0px));right:12px}.vp:not(.fs) .vp-actions button{height:44px;padding:0 16px;font-size:14px}.vp:not(.fs) .vp-zone{bottom:100px}.vp:not(.fs) .vp-menu{bottom:104px;right:12px}}
+@media(max-height:480px){.vp-bar{padding-top:24px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));gap:0 10px}.vp button.vp-btn{height:44px}.vp-actions{bottom:calc(134px + env(safe-area-inset-bottom,0px))}.vp-zone{bottom:134px}.vp-menu{bottom:138px}}
 @media(prefers-reduced-motion:reduce){.vp *{transition:none!important}}
 `;
 
@@ -52,9 +54,17 @@ export function playerMarkup() {
     + '<button class="vp-center" aria-label="Reproducir o pausar">▶</button><div class="vp-toast" role="status"></div>'
     + '<div class="vp-top"><button class="vp-btn" data-act="fs" aria-label="Pantalla completa">⛶</button></div>'
     + '<div class="vp-actions"><button class="vp-skip" data-act="skip" hidden></button><button data-act="cancelnext" hidden>Cancelar</button><button class="primary" data-act="next" hidden></button></div>'
-    + '<div class="vp-menu" hidden><label>Siguiente automático<input type="checkbox" data-pref="autonext"></label><label>Saltar opening solo<input type="checkbox" data-pref="autoskip"></label><label>Velocidad<select data-act="speed"><option>0.75</option><option selected>1</option><option>1.25</option><option>1.5</option><option>2</option></select></label></div>'
+    + '<div class="vp-menu" hidden><label>Siguiente automático<input type="checkbox" data-pref="autonext"></label><label>Saltar opening solo<input type="checkbox" data-pref="autoskip"></label><label>Pantalla completa<select data-fsmode><option value="native">Real, sin barras</option><option value="pseudo">Sin aviso, con barras</option></select></label><label>Velocidad<select data-act="speed"><option>0.75</option><option selected>1</option><option>1.25</option><option>1.5</option><option>2</option></select></label></div>'
     + '<div class="vp-bar"><button class="vp-btn" data-act="play" aria-label="Reproducir o pausar">▶</button><button class="vp-btn" data-zone="-10" aria-label="Retroceder 10 segundos">↺10</button><input type="range" min="0" max="1000" value="0" aria-label="Posición"><span class="vp-time">0:00 / 0:00</span><button class="vp-btn" data-act="plus" aria-label="Adelantar 85 segundos">+85</button><button class="vp-btn" data-act="menu" aria-label="Ajustes del reproductor">⚙</button></div>'
     + '</div>';
+}
+
+// Al salir de la pantalla del capítulo hay que soltar la pantalla completa real, que sigue activa sobre <main>.
+export function leaveFull() {
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  screen.orientation?.unlock?.();
+  document.body.classList.remove('vp-lock');
+  try { sessionStorage.setItem('anime-local-fs', '0'); } catch {}
 }
 
 let styled = false;
@@ -67,6 +77,8 @@ export function initPlayer({ root, nextPath, onNext }) {
   let ranges = [], idleTimer = 0, toastTimer = 0, countdown = 0, remaining = 0, embed = false, scrubbing = false, autoSkipped = new Set(), tap = { at: 0, side: 0, timer: 0 };
 
   nextButton.textContent = nextPath ? 'Siguiente capítulo ▶' : '';
+  const fsSelect = $('[data-fsmode]'); fsSelect.value = prefs.fsmode === 'pseudo' ? 'pseudo' : 'native';
+  fsSelect.onchange = () => { prefs.fsmode = fsSelect.value; writePrefs(prefs); };
   for (const box of menu.querySelectorAll('[data-pref]')) { box.checked = !!prefs[box.dataset.pref]; box.onchange = () => { prefs[box.dataset.pref] = box.checked; writePrefs(prefs); }; }
 
   const say = text => { toast.textContent = text; toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('on'), 1300); };
@@ -86,19 +98,32 @@ export function initPlayer({ root, nextPath, onNext }) {
     countdown = setInterval(() => { remaining -= 1; if (remaining <= 0) goNext(); else paintCount(); }, 1000);
   }
 
-  // Pantalla completa propia: la API nativa muestra el aviso del navegador con la dirección del sitio.
-  // Un cambio de capítulo también dispara popstate, pero con otro hash: ahí la pantalla completa debe seguir.
+  // Real: Fullscreen API sobre <main>, que sobrevive al cambio de capítulo; oculta las barras del sistema
+  // y Chrome muestra un aviso breve. Propia: solo CSS, sin aviso pero con las barras visibles.
+  const host = root.closest('main') || root.parentElement;
   let enterHash = location.hash;
-  const onPop = () => { if (root.classList.contains('fs') && location.hash === enterHash) setFull(false, false); };
-  function setFull(on, fromButton = true) {
+  const nativeOn = () => !!document.fullscreenElement;
+  // Un cambio de capítulo también dispara popstate, pero con otro hash: ahí la pantalla completa debe seguir.
+  const onPop = () => { if (root.classList.contains('fs') && !nativeOn() && location.hash === enterHash) setFull(false, 'pop'); };
+  const onFsChange = () => { if (!nativeOn() && root.classList.contains('fs') && prefs.fsmode !== 'pseudo') setFull(false, 'native'); };
+  function setFull(on, source = 'button') {
+    const native = prefs.fsmode !== 'pseudo' && !!host.requestFullscreen;
     if (on) enterHash = location.hash;
     root.classList.toggle('fs', on); document.body.classList.toggle('vp-lock', on);
     try { sessionStorage.setItem('anime-local-fs', on ? '1' : '0'); } catch {}
-    if (on && fromButton !== 'restore') history.pushState({ vpfs: 1 }, '', location.href);
-    if (!on && fromButton && history.state?.vpfs) history.back();
+    if (on && source === 'button') {
+      if (native) host.requestFullscreen({ navigationUI: 'hide' }).then(() => screen.orientation?.lock?.('landscape').catch(() => {})).catch(() => history.pushState({ vpfs: 1 }, '', location.href));
+      else history.pushState({ vpfs: 1 }, '', location.href);
+    }
+    if (!on) {
+      if (nativeOn()) document.exitFullscreen().catch(() => {});
+      screen.orientation?.unlock?.();
+      if (source === 'button' && history.state?.vpfs) history.back();
+    }
     wake();
   }
   window.addEventListener('popstate', onPop);
+  document.addEventListener('fullscreenchange', onFsChange);
 
   function paint() {
     const playing = !video.paused && !video.ended;
@@ -157,7 +182,7 @@ export function initPlayer({ root, nextPath, onNext }) {
   };
   document.addEventListener('keydown', onKey);
 
-  try { if (sessionStorage.getItem('anime-local-fs') === '1') setFull(true, 'restore'); } catch {}
+  try { if (sessionStorage.getItem('anime-local-fs') === '1' && (prefs.fsmode === 'pseudo' || nativeOn())) setFull(true, 'restore'); } catch {}
   paint(); wake();
 
   return {
@@ -170,7 +195,7 @@ export function initPlayer({ root, nextPath, onNext }) {
     embed(url) { frame.src = url; },
     destroy() {
       clearInterval(countdown); clearTimeout(idleTimer); clearTimeout(toastTimer); clearTimeout(tap.timer);
-      document.removeEventListener('keydown', onKey); window.removeEventListener('popstate', onPop);
+      document.removeEventListener('keydown', onKey); window.removeEventListener('popstate', onPop); document.removeEventListener('fullscreenchange', onFsChange);
       document.body.classList.remove('vp-lock');
     }
   };
